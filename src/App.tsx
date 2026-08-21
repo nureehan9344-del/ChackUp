@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Navbar } from './components/Navbar';
+import { DataSourceBanner } from './components/DataSourceBanner';
 import { FilterBar } from './components/FilterBar';
 import { ExecutiveSummary } from './components/ExecutiveSummary';
 import { ComparativeCharts } from './components/ComparativeCharts';
@@ -11,17 +12,43 @@ import { WireframeGuideModal } from './components/WireframeGuideModal';
 import { AppsScriptCodeModal } from './components/AppsScriptCodeModal';
 import { DataImportExportModal } from './components/DataImportExportModal';
 import { INITIAL_DATA } from './data/dataset';
-import { computeMetricSummaries } from './data/analytics';
+import { computeMetricSummaries, buildPersonsFromRecords } from './data/analytics';
 import { BodyCompositionRecord, FilterState, PersonSummary, Quarter } from './types';
+import {
+  loadPersistedState,
+  saveCustomState,
+  clearCustomState,
+  syncDatasetToFirestore,
+} from './utils/storage';
+import { fetchAllSheetsFromSpreadsheet } from './utils/csvParser';
 
 export default function App() {
   const [records, setRecords] = useState<BodyCompositionRecord[]>(INITIAL_DATA.records);
   const [persons, setPersons] = useState<PersonSummary[]>(INITIAL_DATA.persons);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isSyncingLive, setIsSyncingLive] = useState(false);
 
-  // Asynchronously load the full 2,721 personnel dataset from /dataset.json
+  // Data source management
+  const [dataSourceMode, setDataSourceMode] = useState<'default' | 'custom' | 'sheet_live'>('default');
+  const [sheetUrl, setSheetUrl] = useState<string>('');
+  const [lastSync, setLastSync] = useState<string | null>(null);
+
+  // Load dataset: First check persisted custom/sheet data in localStorage; if none, fetch default 2,721 personnel dataset
   useEffect(() => {
     let isMounted = true;
+    const persisted = loadPersistedState();
+
+    if (persisted.hasCustomData && persisted.records.length > 0) {
+      const computedPersons = buildPersonsFromRecords(persisted.records);
+      setRecords(persisted.records);
+      setPersons(computedPersons);
+      setDataSourceMode(persisted.mode);
+      setSheetUrl(persisted.sheetUrl);
+      setLastSync(persisted.lastSync);
+      return;
+    }
+
+    // Default mode: Load full 2,721 personnel dataset from /dataset.json
     setIsLoadingData(true);
     fetch('/dataset.json')
       .then((res) => {
@@ -62,6 +89,87 @@ export default function App() {
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  // Live Sync directly from Google Sheet (All Sheets / Tabs)
+  const handleSyncLiveFromSheet = useCallback(async () => {
+    if (!sheetUrl) {
+      setIsDataModalOpen(true);
+      return;
+    }
+
+    setIsSyncingLive(true);
+    try {
+      const result = await fetchAllSheetsFromSpreadsheet(sheetUrl);
+
+      if (result.records.length > 0) {
+        const computed = buildPersonsFromRecords(result.records);
+        setRecords(result.records);
+        setPersons(computed);
+        setDataSourceMode('sheet_live');
+        const now = new Date().toLocaleString('th-TH', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        setLastSync(now);
+        saveCustomState(result.records, sheetUrl, 'sheet_live');
+        syncDatasetToFirestore(result.records, sheetUrl);
+      }
+    } catch (err) {
+      console.error('Live sync error:', err);
+    } finally {
+      setIsSyncingLive(false);
+    }
+  }, [sheetUrl]);
+
+  // Handle imported records (either from CSV file, pasted text, or Google Sheet)
+  const handleImportNewRecords = (
+    newRecords: BodyCompositionRecord[],
+    newSheetUrl?: string,
+    mode: 'custom' | 'sheet_live' = 'custom'
+  ) => {
+    const computedPersons = buildPersonsFromRecords(newRecords);
+    setRecords(newRecords);
+    setPersons(computedPersons);
+    setDataSourceMode(mode);
+    if (newSheetUrl !== undefined) {
+      setSheetUrl(newSheetUrl);
+    }
+    const now = new Date().toLocaleString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    setLastSync(now);
+
+    // Persist immediately in localStorage & Firestore
+    saveCustomState(newRecords, newSheetUrl || sheetUrl, mode);
+    syncDatasetToFirestore(newRecords, newSheetUrl || sheetUrl);
+  };
+
+  // Revert back to default dataset (2,721 personnel)
+  const handleResetToDefault = () => {
+    clearCustomState();
+    setDataSourceMode('default');
+    setSheetUrl('');
+    setLastSync(null);
+
+    setIsLoadingData(true);
+    fetch('/dataset.json')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.records && data.persons) {
+          setRecords(data.records);
+          setPersons(data.persons);
+        }
+      })
+      .catch((err) => console.warn(err))
+      .finally(() => setIsLoadingData(false));
   };
 
   // Filter persons based on search & tags
@@ -129,10 +237,6 @@ export default function App() {
     }
   };
 
-  const handleImportNewRecords = (newRecords: BodyCompositionRecord[]) => {
-    setRecords((prev) => [...newRecords, ...prev]);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-emerald-200">
       {/* Top Navigation */}
@@ -147,6 +251,19 @@ export default function App() {
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Data Source Status Banner */}
+        <DataSourceBanner
+          mode={dataSourceMode}
+          totalPersons={persons.length}
+          totalRecords={records.length}
+          lastSync={lastSync}
+          sheetUrl={sheetUrl}
+          isSyncing={isSyncingLive}
+          onSyncLive={handleSyncLiveFromSheet}
+          onOpenDataModal={() => setIsDataModalOpen(true)}
+          onResetToDefault={handleResetToDefault}
+        />
+
         {/* Global Filter Bar */}
         <FilterBar
           filters={filters}
@@ -228,7 +345,10 @@ export default function App() {
         isOpen={isDataModalOpen}
         onClose={() => setIsDataModalOpen(false)}
         records={records}
+        currentSheetUrl={sheetUrl}
         onImportNewRecords={handleImportNewRecords}
+        onResetToDefault={handleResetToDefault}
+        mode={dataSourceMode}
       />
     </div>
   );

@@ -20,6 +20,13 @@ export const AppsScriptCodeModal: React.FC<AppsScriptCodeModalProps> = ({ isOpen
  */
 
 function doGet(e) {
+  // หากเรียกผ่าน API หรือระบุ ?format=json จะส่งคืนข้อมูล JSON ทุกชีททันที
+  if (e && e.parameter && e.parameter.format === 'json') {
+    const data = getDashboardData();
+    return ContentService.createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Health & Wellness Body Composition Dashboard')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -27,59 +34,94 @@ function doGet(e) {
 }
 
 /**
- * ดึงข้อมูลจากชีท Q1, Q2, Q3
+ * ดึงข้อมูลจากทุกแท็บชีท (Q1, Q2, Q3, ไตรมาส 1-3, หรือทุกชีทในไฟล์)
  * และคำนวณสถิติภาพรวม + จัดกลุ่ม BMI อัตโนมัติ พร้อมคิดผลการเปลี่ยนแปลงเป็น %
  */
 function getDashboardData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const quarters = ['Q1', 'Q2', 'Q3'];
+  const sheets = ss.getSheets();
   const allRecords = [];
   const personsMap = {};
 
-  quarters.forEach(qName => {
-    const sheet = ss.getSheetByName(qName);
-    if (!sheet) return;
+  sheets.forEach(sheet => {
+    const sheetName = sheet.getName().trim();
+    
+    // ตรวจจับไตรมาสจากชื่อแท็บชีท
+    let qName = 'Q3';
+    const sLower = sheetName.toLowerCase();
+    if (sLower.includes('q1') || sLower.includes('ไตรมาส 1') || sLower.includes('ไตรมาส1') || sLower.includes('รอบ 1') || sLower.includes('1')) {
+      qName = 'Q1';
+    } else if (sLower.includes('q2') || sLower.includes('ไตรมาส 2') || sLower.includes('ไตรมาส2') || sLower.includes('รอบ 2') || sLower.includes('2')) {
+      qName = 'Q2';
+    } else if (sLower.includes('q3') || sLower.includes('ไตรมาส 3') || sLower.includes('ไตรมาส3') || sLower.includes('รอบ 3') || sLower.includes('3')) {
+      qName = 'Q3';
+    }
 
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return;
 
-    const headers = data[0].map(h => String(h).trim().toLowerCase());
+    const headers = data[0].map(h => String(h).trim().toLowerCase().replace(/[\\s_#%.-]/g, ''));
     
-    // Column index lookup
-    const idxPerson = headers.indexOf('person_id');
-    const idxHeight = headers.indexOf('height');
-    const idxWeight = headers.indexOf('weight');
-    const idxMuscle = headers.indexOf('muscle_mass');
-    const idxBmi = headers.indexOf('bmi');
-    const idxFatPct = headers.indexOf('body_fat_percentage');
-    const idxFatMass = headers.indexOf('fat_mass');
+    // ค้นหาดัชนีคอลัมน์แบบยืดหยุ่นทั้งภาษาไทยและอังกฤษ
+    const findIdx = (aliases) => {
+      for (let i = 0; i < headers.length; i++) {
+        if (aliases.some(a => headers[i] === a || headers[i].includes(a))) return i;
+      }
+      return -1;
+    };
+
+    const idxPerson = findIdx(['personid', 'id', 'รหัส', 'รหัสพนักงาน', 'person', 'pid', 'no']);
+    const idxQuarter = findIdx(['quarter', 'ไตรมาส', 'งวด', 'q', 'รอบ']);
+    const idxHeight = findIdx(['height', 'ส่วนสูง', 'ความสูง', 'ht', 'cm']);
+    const idxWeight = findIdx(['weight', 'น้ำหนัก', 'wt', 'kg']);
+    const idxMuscle = findIdx(['musclemass', 'muscle', 'มวลกล้ามเนื้อ', 'กล้ามเนื้อ', 'smm']);
+    const idxBmi = findIdx(['bmi', 'ดัชนีมวลกาย']);
+    const idxFatPct = findIdx(['bodyfatpercentage', 'bodyfat', 'fatpercentage', 'fatpct', 'เปอร์เซ็นต์ไขมัน', 'ไขมัน%', '%ไขมัน', 'pbf']);
+    const idxFatMass = findIdx(['fatmass', 'มวลไขมัน', 'ไขมัน(kg)', 'ไขมันkg', 'fm']);
+    const idxVisceral = findIdx(['visceralfat', 'visceral', 'ไขมันช่องท้อง', 'ช่องท้อง', 'vfl']);
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const personId = String(row[idxPerson] || '').trim();
-      if (!personId) continue;
+      const personId = String(idxPerson !== -1 ? row[idxPerson] : row[0] || '').trim();
+      if (!personId || personId === '#N/A' || personId === 'null') continue;
 
-      const height = parseFloat(row[idxHeight]) || null;
-      const weight = parseFloat(row[idxWeight]) || null;
-      const muscle = parseFloat(row[idxMuscle]) || null;
-      let bmi = parseFloat(row[idxBmi]) || null;
-      const fatPct = parseFloat(row[idxFatPct]) || null;
-      const fatMass = parseFloat(row[idxFatMass]) || null;
+      let rowQuarter = qName;
+      if (idxQuarter !== -1 && row[idxQuarter]) {
+        const qVal = String(row[idxQuarter]).toUpperCase().trim();
+        if (qVal.includes('Q1') || qVal === '1') rowQuarter = 'Q1';
+        else if (qVal.includes('Q2') || qVal === '2') rowQuarter = 'Q2';
+        else if (qVal.includes('Q3') || qVal === '3') rowQuarter = 'Q3';
+      }
 
-      // Calculate BMI if missing
-      if (!bmi && height && weight) {
+      const parseNum = (val) => {
+        if (!val || val === '#N/A' || val === '-') return null;
+        const n = parseFloat(String(val).replace(/,/g, '').replace(/%/g, ''));
+        return isNaN(n) ? null : n;
+      };
+
+      const height = idxHeight !== -1 ? parseNum(row[idxHeight]) : 160;
+      const weight = idxWeight !== -1 ? parseNum(row[idxWeight]) : null;
+      const muscle = idxMuscle !== -1 ? parseNum(row[idxMuscle]) : null;
+      let bmi = idxBmi !== -1 ? parseNum(row[idxBmi]) : null;
+      const fatPct = idxFatPct !== -1 ? parseNum(row[idxFatPct]) : null;
+      const fatMass = idxFatMass !== -1 ? parseNum(row[idxFatMass]) : null;
+      let visceral = idxVisceral !== -1 ? parseNum(row[idxVisceral]) : null;
+
+      // คำนวณ BMI อัตโนมัติหากไม่มีระบุ
+      if (!bmi && height && weight && height > 0) {
         bmi = Number((weight / Math.pow(height / 100, 2)).toFixed(2));
       }
 
-      // Calculate Visceral Fat proxy
-      let visceral = null;
-      if (bmi && fatPct) {
+      // คำนวณไขมันช่องท้องโดยประมาณ
+      if (!visceral && bmi && fatPct) {
         visceral = Math.round(Math.max(1, (bmi - 18) * 0.45 + (fatPct - 15) * 0.22 + 1));
       }
 
+      if (weight === null && muscle === null && bmi === null && fatPct === null) continue;
+
       const record = {
         person_id: personId,
-        quarter: qName,
+        quarter: rowQuarter,
         height: height,
         weight: weight,
         muscle_mass: muscle,
@@ -98,7 +140,7 @@ function getDashboardData() {
           quarters: {}
         };
       }
-      personsMap[personId].quarters[qName] = record;
+      personsMap[personId].quarters[rowQuarter] = record;
     }
   });
 

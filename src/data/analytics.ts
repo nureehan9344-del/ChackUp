@@ -1,6 +1,121 @@
 import { BodyCompositionRecord, BMIGroup, MetricSummary, PersonSummary, Quarter } from '../types';
 import { getBMIGroup } from './dataset';
 
+/**
+ * Automatically aggregates and calculates PersonSummary metrics from a list of records
+ */
+export function buildPersonsFromRecords(records: BodyCompositionRecord[]): PersonSummary[] {
+  const map = new Map<string, {
+    person_id: string;
+    height: number;
+    quarters: { Q1?: BodyCompositionRecord; Q2?: BodyCompositionRecord; Q3?: BodyCompositionRecord };
+  }>();
+
+  records.forEach((r) => {
+    if (!r.person_id) return;
+    let entry = map.get(r.person_id);
+    if (!entry) {
+      entry = {
+        person_id: r.person_id,
+        height: r.height || 160,
+        quarters: {},
+      };
+      map.set(r.person_id, entry);
+    }
+    if (r.quarter === 'Q1' || r.quarter === 'Q2' || r.quarter === 'Q3') {
+      entry.quarters[r.quarter] = r;
+      if (r.height) entry.height = r.height;
+    }
+  });
+
+  const persons: PersonSummary[] = [];
+
+  map.forEach((entry) => {
+    const q3 = entry.quarters.Q3;
+    const q2 = entry.quarters.Q2;
+    const q1 = entry.quarters.Q1;
+
+    const latest = q3 || q2 || q1;
+    if (!latest) return;
+
+    const latestQuarter: Quarter = q3 ? 'Q3' : q2 ? 'Q2' : 'Q1';
+    const baseline = (latest !== q1 && q1) ? q1 : (latest !== q2 && q2) ? q2 : latest;
+
+    const completeness: 'complete' | 'partial' = (q1 && q2 && q3) ? 'complete' : 'partial';
+
+    let fatPercentageChange: number | null = null;
+    let fatPercentageChangePct: number | null = null;
+    let muscleMassChange: number | null = null;
+    let muscleMassChangePct: number | null = null;
+    let visceralFatChange: number | null = null;
+    let visceralFatChangePct: number | null = null;
+    let bmiChange: number | null = null;
+    let bmiChangePct: number | null = null;
+    let weightChange: number | null = null;
+    let weightChangePct: number | null = null;
+
+    if (baseline && latest && baseline !== latest) {
+      if (latest.body_fat_percentage !== null && baseline.body_fat_percentage !== null) {
+        fatPercentageChange = Number((latest.body_fat_percentage - baseline.body_fat_percentage).toFixed(2));
+        fatPercentageChangePct = baseline.body_fat_percentage > 0
+          ? Number(((fatPercentageChange / baseline.body_fat_percentage) * 100).toFixed(2))
+          : 0;
+      }
+
+      if (latest.muscle_mass !== null && baseline.muscle_mass !== null) {
+        muscleMassChange = Number((latest.muscle_mass - baseline.muscle_mass).toFixed(2));
+        muscleMassChangePct = baseline.muscle_mass > 0
+          ? Number(((muscleMassChange / baseline.muscle_mass) * 100).toFixed(2))
+          : 0;
+      }
+
+      if (latest.visceral_fat !== null && baseline.visceral_fat !== null) {
+        visceralFatChange = Number((latest.visceral_fat - baseline.visceral_fat).toFixed(1));
+        visceralFatChangePct = baseline.visceral_fat > 0
+          ? Number(((visceralFatChange / baseline.visceral_fat) * 100).toFixed(2))
+          : 0;
+      }
+
+      if (latest.bmi !== null && baseline.bmi !== null) {
+        bmiChange = Number((latest.bmi - baseline.bmi).toFixed(2));
+        bmiChangePct = baseline.bmi > 0
+          ? Number(((bmiChange / baseline.bmi) * 100).toFixed(2))
+          : 0;
+      }
+
+      if (latest.weight !== null && baseline.weight !== null) {
+        weightChange = Number((latest.weight - baseline.weight).toFixed(2));
+        weightChangePct = baseline.weight > 0
+          ? Number(((weightChange / baseline.weight) * 100).toFixed(2))
+          : 0;
+      }
+    }
+
+    const bmiGroup = getBMIGroup(latest.bmi);
+
+    persons.push({
+      person_id: entry.person_id,
+      height: entry.height,
+      quarters: entry.quarters,
+      latestQuarter,
+      completeness,
+      fatPercentageChange,
+      fatPercentageChangePct,
+      muscleMassChange,
+      muscleMassChangePct,
+      visceralFatChange,
+      visceralFatChangePct,
+      bmiChange,
+      bmiChangePct,
+      weightChange,
+      weightChangePct,
+      bmiGroup,
+    });
+  });
+
+  return persons;
+}
+
 export function calculateQuarterAverages(records: BodyCompositionRecord[], quarter: Quarter) {
   const quarterRecords = records.filter(r => r.quarter === quarter);
   if (quarterRecords.length === 0) {
