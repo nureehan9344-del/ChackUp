@@ -1,0 +1,6 @@
+{
+  "name": "Health & Wellness Body Composition Dashboard",
+  "description": "แดชบอร์ดเปรียบเทียบข้อมูลผลการวัดมวลร่างกาย (Body Composition) 3 ไตรมาส พร้อมระบบจัดกลุ่ม BMI, การวิเคราะห์แนวโน้มองค์กรและรายบุคคล",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

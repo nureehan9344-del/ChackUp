@@ -1,0 +1,120 @@
+{
+  "entities": {
+    "BodyCompositionRecord": {
+      "title": "BodyCompositionRecord",
+      "description": "Quarterly body composition measurement for an organization member",
+      "type": "object",
+      "properties": {
+        "person_id": {
+          "type": "string",
+          "description": "Identifier of the personnel member",
+          "maxLength": 64
+        },
+        "quarter": {
+          "type": "string",
+          "description": "Measurement quarter",
+          "enum": ["Q1", "Q2", "Q3", "Q4"]
+        },
+        "height": {
+          "type": "number",
+          "description": "Height in centimeters"
+        },
+        "weight": {
+          "type": "number",
+          "description": "Weight in kilograms"
+        },
+        "muscle_mass": {
+          "type": "number",
+          "description": "Skeletal muscle mass in kilograms"
+        },
+        "bmi": {
+          "type": "number",
+          "description": "Body Mass Index"
+        },
+        "body_fat_percentage": {
+          "type": "number",
+          "description": "Body fat percentage"
+        },
+        "fat_mass": {
+          "type": "number",
+          "description": "Fat mass in kilograms"
+        },
+        "visceral_fat": {
+          "type": "number",
+          "description": "Visceral fat rating level"
+        },
+        "department": {
+          "type": "string",
+          "description": "Department name",
+          "maxLength": 128
+        },
+        "gender": {
+          "type": "string",
+          "description": "Gender code",
+          "enum": ["M", "F", "Other"]
+        },
+        "age": {
+          "type": "number",
+          "description": "Age in years"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "User ID who updated the record",
+          "maxLength": 128
+        }
+      },
+      "required": ["person_id", "quarter", "weight", "muscle_mass", "bmi", "body_fat_percentage"]
+    },
+    "WellnessNote": {
+      "title": "WellnessNote",
+      "description": "Counseling and wellness notes for specific personnel",
+      "type": "object",
+      "properties": {
+        "person_id": {
+          "type": "string",
+          "description": "Person ID this note applies to",
+          "maxLength": 64
+        },
+        "note": {
+          "type": "string",
+          "description": "Counselor note or action recommendation",
+          "maxLength": 1000
+        },
+        "targetQuarter": {
+          "type": "string",
+          "description": "Target quarter for the intervention",
+          "enum": ["Q1", "Q2", "Q3", "Q4"]
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Author UID",
+          "maxLength": 128
+        },
+        "authorEmail": {
+          "type": "string",
+          "description": "Author email",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["person_id", "note", "authorId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/records/{recordId}": {
+      "schema": { "$ref": "#/entities/BodyCompositionRecord" },
+      "description": "Collection of body composition records across quarters"
+    },
+    "/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/WellnessNote" },
+      "description": "Collection of wellness coaching and counseling notes"
+    }
+  }
+}

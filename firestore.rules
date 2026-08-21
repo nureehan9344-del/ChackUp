@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidRecord(data) {
+      return data.person_id is string && data.person_id.size() <= 64 &&
+             data.quarter in ['Q1', 'Q2', 'Q3', 'Q4'] &&
+             data.weight is number && data.weight > 0 && data.weight < 300 &&
+             data.muscle_mass is number && data.muscle_mass >= 0 &&
+             data.bmi is number && data.bmi >= 0 &&
+             data.body_fat_percentage is number && data.body_fat_percentage >= 0;
+    }
+
+    function isValidNote(data) {
+      return data.person_id is string && data.person_id.size() <= 64 &&
+             data.note is string && data.note.size() > 0 && data.note.size() <= 1000 &&
+             data.authorId is string && data.authorId == request.auth.uid;
+    }
+
+    // Body Composition Records Collection
+    match /records/{recordId} {
+      allow get, list: if true;
+      allow create, update: if isSignedIn() && isValidId(recordId) && isValidRecord(incoming());
+      allow delete: if isSignedIn() && isValidId(recordId);
+    }
+
+    // Wellness & Coaching Notes Collection
+    match /notes/{noteId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(noteId) && isValidNote(incoming());
+      allow update: if isSignedIn() && isValidId(noteId) && existing().authorId == request.auth.uid && isValidNote(incoming());
+      allow delete: if isSignedIn() && isValidId(noteId) && existing().authorId == request.auth.uid;
+    }
+  }
+}
