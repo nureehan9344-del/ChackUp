@@ -17,7 +17,8 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
-  Plus
+  Plus,
+  FileDown
 } from 'lucide-react';
 import { BodyCompositionRecord, Quarter } from '../types';
 import {
@@ -34,6 +35,7 @@ interface DataImportExportModalProps {
   currentSheetUrl?: string;
   onImportNewRecords: (records: BodyCompositionRecord[], sheetUrl?: string, mode?: 'custom' | 'sheet_live') => void;
   onResetToDefault: () => void;
+  onOpenPdfReport?: () => void;
   mode: 'default' | 'custom' | 'sheet_live';
 }
 
@@ -44,6 +46,7 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
   currentSheetUrl = '',
   onImportNewRecords,
   onResetToDefault,
+  onOpenPdfReport,
   mode,
 }) => {
   const [activeTab, setActiveTab] = useState<'sheet_url' | 'upload_file' | 'paste_csv' | 'export'>('sheet_url');
@@ -523,6 +526,32 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
           {/* TAB 4: Export */}
           {activeTab === 'export' && (
             <div className="space-y-4">
+              {/* Executive PDF Report Card */}
+              <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-4 sm:p-5 rounded-xl border border-blue-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                    <FileDown className="h-4 w-4 text-emerald-400" />
+                    ส่งออกรายงานสรุปผู้บริหาร (Executive Summary PDF Report)
+                  </h4>
+                  <p className="text-xs text-blue-150 leading-relaxed max-w-xl">
+                    สร้างเอกสารรายงาน PDF สรุป 5 ตัวชี้วัดสำคัญ (กล้ามเนื้อ, ไขมัน, ไขมันช่องท้อง, BMI) พร้อมกราฟเปรียบเทียบแนวโน้ม 3 ไตรมาส และข้อเสนอแนะเชิงกลยุทธ์ เพื่อนำเสนอต่อผู้บริหาร
+                  </p>
+                </div>
+                {onOpenPdfReport && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onOpenPdfReport();
+                    }}
+                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 shrink-0"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    <span>เปิดหน้าส่งออก PDF</span>
+                  </button>
+                )}
+              </div>
+
+              {/* CSV Download Card */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <Download className="h-4 w-4 text-emerald-600" /> ดาวน์โหลดชุดข้อมูล CSV

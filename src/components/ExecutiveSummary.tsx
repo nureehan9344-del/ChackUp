@@ -16,7 +16,8 @@ import {
   AlertCircle,
   Users,
   LayoutGrid,
-  Table as TableIcon
+  Table as TableIcon,
+  FileDown
 } from 'lucide-react';
 import { MetricSummary, PersonSummary, Quarter } from '../types';
 import { computeBMITransitionAnalysis } from '../data/analytics';
@@ -26,6 +27,7 @@ interface ExecutiveSummaryProps {
   activeQuarter: Quarter;
   totalPersonnel: number;
   persons?: PersonSummary[];
+  onOpenPdfReport?: () => void;
 }
 
 export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
@@ -33,6 +35,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
   activeQuarter,
   totalPersonnel,
   persons = [],
+  onOpenPdfReport,
 }) => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
@@ -127,30 +130,43 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
           </p>
         </div>
 
-        {/* View mode toggle */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 self-start md:self-auto">
-          <button
-            onClick={() => setViewMode('cards')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-              viewMode === 'cards'
-                ? 'bg-white text-blue-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>มุมมองการ์ด (เข้าใจง่าย)</span>
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-              viewMode === 'table'
-                ? 'bg-white text-blue-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <TableIcon className="w-3.5 h-3.5" />
-            <span>มุมมองตารางสรุป</span>
-          </button>
+        {/* Actions & View mode toggle */}
+        <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
+          {onOpenPdfReport && (
+            <button
+              onClick={onOpenPdfReport}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-all"
+              title="ส่งออกรายงานสรุปสำหรับผู้บริหารและกราฟสำคัญเป็น PDF"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span>ส่งออกรายงาน PDF</span>
+            </button>
+          )}
+
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                viewMode === 'cards'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>มุมมองการ์ด (เข้าใจง่าย)</span>
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                viewMode === 'table'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <TableIcon className="w-3.5 h-3.5" />
+              <span>มุมมองตารางสรุป</span>
+            </button>
+          </div>
         </div>
       </div>
 

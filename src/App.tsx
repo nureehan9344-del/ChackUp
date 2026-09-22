@@ -11,6 +11,7 @@ import { PersonnelTable } from './components/PersonnelTable';
 import { WireframeGuideModal } from './components/WireframeGuideModal';
 import { AppsScriptCodeModal } from './components/AppsScriptCodeModal';
 import { DataImportExportModal } from './components/DataImportExportModal';
+import { PdfReportModal } from './components/PdfReportModal';
 import { INITIAL_DATA } from './data/dataset';
 import { computeMetricSummaries, buildPersonsFromRecords } from './data/analytics';
 import { BodyCompositionRecord, FilterState, PersonSummary, Quarter } from './types';
@@ -86,6 +87,7 @@ export default function App() {
   const [isWireframeOpen, setIsWireframeOpen] = useState(false);
   const [isAppsScriptOpen, setIsAppsScriptOpen] = useState(false);
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+  const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
@@ -246,6 +248,7 @@ export default function App() {
         onOpenWireframeGuide={() => setIsWireframeOpen(true)}
         onOpenAppsScript={() => setIsAppsScriptOpen(true)}
         onOpenDataModal={() => setIsDataModalOpen(true)}
+        onOpenPdfReport={() => setIsPdfReportOpen(true)}
         totalPersonnel={persons.length}
       />
 
@@ -286,6 +289,7 @@ export default function App() {
               activeQuarter={filters.selectedQuarter}
               totalPersonnel={filteredPersons.length}
               persons={filteredPersons}
+              onOpenPdfReport={() => setIsPdfReportOpen(true)}
             />
 
             {/* Section 2: Comparative Charts & Long-term Risk Highlights */}
@@ -348,7 +352,18 @@ export default function App() {
         currentSheetUrl={sheetUrl}
         onImportNewRecords={handleImportNewRecords}
         onResetToDefault={handleResetToDefault}
+        onOpenPdfReport={() => setIsPdfReportOpen(true)}
         mode={dataSourceMode}
+      />
+      <PdfReportModal
+        isOpen={isPdfReportOpen}
+        onClose={() => setIsPdfReportOpen(false)}
+        records={filteredRecords}
+        persons={filteredPersons}
+        summaries={metricSummaries}
+        activeQuarter={filters.selectedQuarter}
+        totalPersonnel={filteredPersons.length}
+        dataSourceName={dataSourceMode === 'sheet_live' ? 'Google Sheets (Live Sync)' : dataSourceMode === 'custom' ? 'Custom Uploaded Data' : 'ระบบฐานข้อมูลองค์กร (2,721 ท่าน)'}
       />
     </div>
   );

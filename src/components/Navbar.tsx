@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Code, FileText, Download, Sparkles, HeartPulse, RefreshCw, BarChart2, LogIn, LogOut, User as UserIcon, Cloud } from 'lucide-react';
+import { Activity, Code, FileText, Download, Sparkles, HeartPulse, RefreshCw, BarChart2, LogIn, LogOut, User as UserIcon, Cloud, FileDown } from 'lucide-react';
 import { Quarter } from '../types';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,6 +9,7 @@ interface NavbarProps {
   onOpenAppsScript: () => void;
   onOpenWireframeGuide: () => void;
   onOpenDataModal: () => void;
+  onOpenPdfReport: () => void;
   totalPersonnel: number;
 }
 
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAppsScript,
   onOpenWireframeGuide,
   onOpenDataModal,
+  onOpenPdfReport,
   totalPersonnel,
 }) => {
   const { user, signInWithGoogle, signOut, isFirestoreConnected } = useAuth();
@@ -84,6 +86,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Code className="h-3.5 w-3.5 text-emerald-600" />
               <span className="hidden lg:inline">Apps Script</span>
+            </button>
+
+            {/* PDF Summary Report Export Button */}
+            <button
+              onClick={onOpenPdfReport}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-xs transition-all"
+              title="ส่งออกรายงานสรุปผู้บริหารเป็นไฟล์ PDF (Executive Summary + Key Charts)"
+            >
+              <FileDown className="h-3.5 w-3.5 text-blue-100" />
+              <span>ส่งออก PDF</span>
             </button>
 
             {/* Data Import / Sync */}
