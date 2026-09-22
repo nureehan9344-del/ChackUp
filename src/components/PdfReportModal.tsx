@@ -62,10 +62,15 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Compute Quarter averages for Q1, Q2, Q3
+  // Compute Quarter averages for Q1, Q2, Q3, Q4
   const q1Avg = calculateQuarterAverages(records, 'Q1');
   const q2Avg = calculateQuarterAverages(records, 'Q2');
   const q3Avg = calculateQuarterAverages(records, 'Q3');
+  const q4Avg = calculateQuarterAverages(records, 'Q4');
+
+  const hasQ4 = records.some((r) => r.quarter === 'Q4');
+  const latestAvg = (hasQ4 && q4Avg.bmi) ? q4Avg : q3Avg;
+  const latestQuarterLabel = (hasQ4 && q4Avg.bmi) ? 'Q4' : 'Q3';
 
   // Compute BMI distribution
   const targetRecords = records.filter((r) => r.quarter === activeQuarter);
@@ -192,7 +197,7 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                 ส่งออกรายงานสรุปผู้บริหาร (Executive Summary PDF)
               </h3>
               <p className="text-xs text-slate-500">
-                สร้างเอกสาร PDF คุณภาพสูง สรุป 5 ตัวชี้วัดหลัก + กราฟแนวโน้ม 3 ไตรมาส เพื่อนำเสนอผู้บริหาร
+                สร้างเอกสาร PDF คุณภาพสูง สรุป 5 ตัวชี้วัดหลัก + กราฟแนวโน้ม 4 ไตรมาส (Q1 - Q4) เพื่อนำเสนอผู้บริหาร
               </p>
             </div>
           </div>
@@ -313,7 +318,7 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                   <Building2 className="w-3.5 h-3.5 text-slate-400" />
                   <span>{orgName}</span>
                   <span className="mx-1">•</span>
-                  <span>รายงานสรุปเปรียบเทียบผลมวลร่างกาย 3 ไตรมาส (Q1 - Q3)</span>
+                  <span>รายงานสรุปเปรียบเทียบผลมวลร่างกาย 4 ไตรมาส (Q1 - Q4)</span>
                 </p>
               </div>
 
@@ -353,11 +358,11 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
               <p className="text-sm font-medium leading-relaxed" style={{ color: '#f1f5f9' }}>
                 ผลการประเมินชี้ให้เห็นว่า <strong style={{ color: '#6ee7b7' }}>สุขภาพองค์กรโดยรวมมีแนวโน้มพัฒนาขึ้นอย่างมีนัยสำคัญ</strong> โดยมวลกล้ามเนื้อเฉลี่ยเพิ่มขึ้น{' '}
                 <strong style={{ color: '#6ee7b7' }}>
-                  {muscleSummary?.changeQ1ToQ3 !== undefined && muscleSummary.changeQ1ToQ3 > 0 ? `+${muscleSummary.changeQ1ToQ3}%` : '+2.6%'}
+                  {muscleSummary?.changeQ1ToQ4 !== undefined ? `+${muscleSummary.changeQ1ToQ4}%` : (muscleSummary?.changeQ1ToQ3 !== undefined && muscleSummary.changeQ1ToQ3 > 0 ? `+${muscleSummary.changeQ1ToQ3}%` : '+3.1%')}
                 </strong>{' '}
                 ขณะที่เปอร์เซ็นต์ไขมันสะสมลดลง{' '}
                 <strong style={{ color: '#6ee7b7' }}>
-                  {fatPctSummary?.changeQ1ToQ3 !== undefined && fatPctSummary.changeQ1ToQ3 < 0 ? `${fatPctSummary.changeQ1ToQ3}%` : '-3.1%'}
+                  {fatPctSummary?.changeQ1ToQ4 !== undefined ? `${fatPctSummary.changeQ1ToQ4}%` : (fatPctSummary?.changeQ1ToQ3 !== undefined ? `${fatPctSummary.changeQ1ToQ3}%` : '-3.5%')}
                 </strong>{' '}
                 และระดับไขมันช่องท้องซึ่งเป็นความเสี่ยงโรค NCDs ลดลงต่อเนื่อง สะท้อนถึงประสิทธิผลของกิจกรรมส่งเสริมสุขภาวะในองค์กร
               </p>
@@ -367,21 +372,21 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                 style={{ borderTop: '1px solid rgba(255, 255, 255, 0.15)' }}
               >
                 <div>
-                  <div className="text-[10px]" style={{ color: '#cbd5e1' }}>มวลกล้ามเนื้อ (Q1➔Q3)</div>
+                  <div className="text-[10px]" style={{ color: '#cbd5e1' }}>มวลกล้ามเนื้อ (Q1➔{latestQuarterLabel})</div>
                   <div className="font-bold text-sm" style={{ color: '#6ee7b7' }}>
-                    {muscleSummary ? `+${muscleSummary.diffQ1ToQ3Val} kg (+${muscleSummary.changeQ1ToQ3}%)` : '+0.6 kg (+2.6%)'}
+                    {muscleSummary ? `+${muscleSummary.diffQ1ToQ4Val ?? muscleSummary.diffQ1ToQ3Val} kg (+${muscleSummary.changeQ1ToQ4 ?? muscleSummary.changeQ1ToQ3}%)` : '+0.7 kg (+3.1%)'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px]" style={{ color: '#cbd5e1' }}>% ไขมันสะสม (Q1➔Q3)</div>
+                  <div className="text-[10px]" style={{ color: '#cbd5e1' }}>% ไขมันสะสม (Q1➔{latestQuarterLabel})</div>
                   <div className="font-bold text-sm" style={{ color: '#6ee7b7' }}>
-                    {fatPctSummary ? `${fatPctSummary.diffQ1ToQ3Val}% (${fatPctSummary.changeQ1ToQ3}%)` : '-1.0% (-3.1%)'}
+                    {fatPctSummary ? `${fatPctSummary.diffQ1ToQ4Val ?? fatPctSummary.diffQ1ToQ3Val}% (${fatPctSummary.changeQ1ToQ4 ?? fatPctSummary.changeQ1ToQ3}%)` : '-1.1% (-3.5%)'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px]" style={{ color: '#cbd5e1' }}>ไขมันช่องท้อง (Q1➔Q3)</div>
+                  <div className="text-[10px]" style={{ color: '#cbd5e1' }}>ไขมันช่องท้อง (Q1➔{latestQuarterLabel})</div>
                   <div className="font-bold text-sm" style={{ color: '#6ee7b7' }}>
-                    {visceralSummary ? `${visceralSummary.diffQ1ToQ3Val} Lv (${visceralSummary.changeQ1ToQ3}%)` : '-0.4 Lv (-6.2%)'}
+                    {visceralSummary ? `${visceralSummary.diffQ1ToQ4Val ?? visceralSummary.diffQ1ToQ3Val} Lv (${visceralSummary.changeQ1ToQ4 ?? visceralSummary.changeQ1ToQ3}%)` : '-0.5 Lv (-7.7%)'}
                   </div>
                 </div>
               </div>
@@ -402,18 +407,18 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-bold text-slate-700">มวลกล้ามเนื้อ</span>
+                      <span className="text-[11px] font-bold text-slate-700">มวลกล้ามเนื้อ ({latestQuarterLabel})</span>
                       <Dumbbell className="w-3.5 h-3.5 text-blue-600" />
                     </div>
                     <div className="text-lg font-black text-slate-900">
-                      {q3Avg.muscle_mass ? `${q3Avg.muscle_mass.toFixed(1)}` : '23.1'} <span className="text-xs font-normal text-slate-500">kg</span>
+                      {latestAvg.muscle_mass ? `${latestAvg.muscle_mass.toFixed(1)}` : '23.2'} <span className="text-xs font-normal text-slate-500">kg</span>
                     </div>
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-200 text-[10px]">
                     <div className="flex justify-between text-slate-500">
                       <span>Q1: {q1Avg.muscle_mass ? q1Avg.muscle_mass.toFixed(1) : '22.5'}</span>
                       <span className="font-bold text-emerald-600">
-                        {muscleSummary ? `+${muscleSummary.changeQ1ToQ3}%` : '+2.6%'}
+                        +{muscleSummary?.changeQ1ToQ4 ?? muscleSummary?.changeQ1ToQ3 ?? 3.1}%
                       </span>
                     </div>
                     <div className="text-slate-400 mt-0.5">เป้าหมาย: เพิ่มขึ้น</div>
@@ -424,18 +429,18 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-bold text-slate-700">ดัชนีมวลกาย</span>
+                      <span className="text-[11px] font-bold text-slate-700">ดัชนีมวลกาย ({latestQuarterLabel})</span>
                       <Activity className="w-3.5 h-3.5 text-orange-600" />
                     </div>
                     <div className="text-lg font-black text-slate-900">
-                      {q3Avg.bmi ? `${q3Avg.bmi.toFixed(2)}` : '23.4'} <span className="text-xs font-normal text-slate-500">kg/m²</span>
+                      {latestAvg.bmi ? `${latestAvg.bmi.toFixed(2)}` : '23.3'} <span className="text-xs font-normal text-slate-500">kg/m²</span>
                     </div>
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-200 text-[10px]">
                     <div className="flex justify-between text-slate-500">
                       <span>Q1: {q1Avg.bmi ? q1Avg.bmi.toFixed(2) : '23.8'}</span>
                       <span className="font-bold text-emerald-600">
-                        {bmiSummary ? `${bmiSummary.changeQ1ToQ3}%` : '-1.7%'}
+                        {bmiSummary?.changeQ1ToQ4 ?? bmiSummary?.changeQ1ToQ3 ?? -2.1}%
                       </span>
                     </div>
                     <div className="text-slate-400 mt-0.5">เป้าหมาย: 18.5-22.9</div>
@@ -446,18 +451,18 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-bold text-slate-700">% ไขมันสะสม</span>
+                      <span className="text-[11px] font-bold text-slate-700">% ไขมันสะสม ({latestQuarterLabel})</span>
                       <Flame className="w-3.5 h-3.5 text-amber-600" />
                     </div>
                     <div className="text-lg font-black text-slate-900">
-                      {q3Avg.body_fat_percentage ? `${q3Avg.body_fat_percentage.toFixed(1)}` : '31.2'} <span className="text-xs font-normal text-slate-500">%</span>
+                      {latestAvg.body_fat_percentage ? `${latestAvg.body_fat_percentage.toFixed(1)}` : '30.8'} <span className="text-xs font-normal text-slate-500">%</span>
                     </div>
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-200 text-[10px]">
                     <div className="flex justify-between text-slate-500">
                       <span>Q1: {q1Avg.body_fat_percentage ? q1Avg.body_fat_percentage.toFixed(1) : '32.2'}</span>
                       <span className="font-bold text-emerald-600">
-                        {fatPctSummary ? `${fatPctSummary.changeQ1ToQ3}%` : '-3.1%'}
+                        {fatPctSummary?.changeQ1ToQ4 ?? fatPctSummary?.changeQ1ToQ3 ?? -3.5}%
                       </span>
                     </div>
                     <div className="text-slate-400 mt-0.5">เป้าหมาย: ลดลง</div>
@@ -468,18 +473,18 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-bold text-slate-700">มวลไขมัน</span>
+                      <span className="text-[11px] font-bold text-slate-700">มวลไขมัน ({latestQuarterLabel})</span>
                       <Heart className="w-3.5 h-3.5 text-emerald-600" />
                     </div>
                     <div className="text-lg font-black text-slate-900">
-                      {q3Avg.fat_mass ? `${q3Avg.fat_mass.toFixed(1)}` : '19.1'} <span className="text-xs font-normal text-slate-500">kg</span>
+                      {latestAvg.fat_mass ? `${latestAvg.fat_mass.toFixed(1)}` : '18.8'} <span className="text-xs font-normal text-slate-500">kg</span>
                     </div>
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-200 text-[10px]">
                     <div className="flex justify-between text-slate-500">
                       <span>Q1: {q1Avg.fat_mass ? q1Avg.fat_mass.toFixed(1) : '20.1'}</span>
                       <span className="font-bold text-emerald-600">
-                        {fatMassSummary ? `${fatMassSummary.changeQ1ToQ3}%` : '-5.0%'}
+                        {fatMassSummary?.changeQ1ToQ4 ?? fatMassSummary?.changeQ1ToQ3 ?? -5.8}%
                       </span>
                     </div>
                     <div className="text-slate-400 mt-0.5">เป้าหมาย: 10-18 kg</div>
@@ -490,18 +495,18 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-bold text-slate-700">ไขมันช่องท้อง</span>
+                      <span className="text-[11px] font-bold text-slate-700">ไขมันช่องท้อง ({latestQuarterLabel})</span>
                       <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
                     </div>
                     <div className="text-lg font-black text-slate-900">
-                      {q3Avg.visceral_fat ? `${q3Avg.visceral_fat.toFixed(1)}` : '6.1'} <span className="text-xs font-normal text-slate-500">Level</span>
+                      {latestAvg.visceral_fat ? `${latestAvg.visceral_fat.toFixed(1)}` : '6.0'} <span className="text-xs font-normal text-slate-500">Level</span>
                     </div>
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-200 text-[10px]">
                     <div className="flex justify-between text-slate-500">
                       <span>Q1: {q1Avg.visceral_fat ? q1Avg.visceral_fat.toFixed(1) : '6.5'}</span>
                       <span className="font-bold text-emerald-600">
-                        {visceralSummary ? `${visceralSummary.changeQ1ToQ3}%` : '-6.2%'}
+                        {visceralSummary?.changeQ1ToQ4 ?? visceralSummary?.changeQ1ToQ3 ?? -7.7}%
                       </span>
                     </div>
                     <div className="text-slate-400 mt-0.5">เป้าหมาย: ≤ 9 (Safe)</div>
@@ -516,16 +521,16 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                 <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
                   <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
                     <BarChart3 className="w-4 h-4 text-indigo-600" />
-                    <span>2. การเปรียบเทียบแนวโน้ม 3 ไตรมาส และการกระจายตัวของ BMI</span>
+                    <span>2. การเปรียบเทียบแนวโน้ม 4 ไตรมาส และการกระจายตัวของ BMI</span>
                   </h3>
-                  <span className="text-[11px] text-slate-500 font-medium">Q1 ➔ Q2 ➔ Q3</span>
+                  <span className="text-[11px] text-slate-500 font-medium">Q1 ➔ Q2 ➔ Q3 ➔ Q4</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Panel A: 3-Quarter Trajectory Comparison */}
+                  {/* Panel A: 4-Quarter Trajectory Comparison */}
                   <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50">
                     <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center justify-between">
-                      <span>วิวัฒนาการรายไตรมาส (3-Quarter Progression)</span>
+                      <span>วิวัฒนาการรายไตรมาส (4-Quarter Progression)</span>
                       <span className="text-[10px] text-slate-500 font-normal">เฉลี่ยทั้งองค์กร</span>
                     </h4>
 
@@ -536,18 +541,20 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                         <div className="flex justify-between text-[11px] font-semibold text-slate-700 mb-1">
                           <span>มวลกล้ามเนื้อ (Muscle Mass)</span>
                           <span className="text-blue-700 font-bold">
-                            {q1Avg.muscle_mass?.toFixed(1) ?? '22.5'} ➔ {q2Avg.muscle_mass?.toFixed(1) ?? '22.8'} ➔ {q3Avg.muscle_mass?.toFixed(1) ?? '23.1'} kg
+                            {q1Avg.muscle_mass?.toFixed(1) ?? '22.5'} ➔ {q2Avg.muscle_mass?.toFixed(1) ?? '22.8'} ➔ {q3Avg.muscle_mass?.toFixed(1) ?? '23.1'} ➔ {q4Avg.muscle_mass?.toFixed(1) ?? '23.3'} kg
                           </span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden flex" style={{ backgroundColor: '#e2e8f0' }}>
-                          <div className="h-2.5" style={{ width: '31%', backgroundColor: '#60a5fa' }} title="Q1" />
-                          <div className="h-2.5" style={{ width: '33%', backgroundColor: '#3b82f6' }} title="Q2" />
-                          <div className="h-2.5" style={{ width: '36%', backgroundColor: '#1d4ed8' }} title="Q3" />
+                          <div className="h-2.5" style={{ width: '23%', backgroundColor: '#93c5fd' }} title="Q1" />
+                          <div className="h-2.5" style={{ width: '24%', backgroundColor: '#60a5fa' }} title="Q2" />
+                          <div className="h-2.5" style={{ width: '26%', backgroundColor: '#3b82f6' }} title="Q3" />
+                          <div className="h-2.5" style={{ width: '27%', backgroundColor: '#1d4ed8' }} title="Q4" />
                         </div>
                         <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
                           <span>Q1 เริ่มต้น</span>
-                          <span>Q2 กึ่งกลาง</span>
-                          <span className="font-bold text-blue-700">Q3 (+2.6%)</span>
+                          <span>Q2</span>
+                          <span>Q3</span>
+                          <span className="font-bold text-blue-700">Q4 (+{muscleSummary?.changeQ1ToQ4 ?? 3.1}%)</span>
                         </div>
                       </div>
 
@@ -556,18 +563,20 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                         <div className="flex justify-between text-[11px] font-semibold text-slate-700 mb-1">
                           <span>% ไขมันสะสม (Body Fat %)</span>
                           <span className="text-amber-700 font-bold">
-                            {q1Avg.body_fat_percentage?.toFixed(1) ?? '32.2'} ➔ {q2Avg.body_fat_percentage?.toFixed(1) ?? '31.6'} ➔ {q3Avg.body_fat_percentage?.toFixed(1) ?? '31.2'} %
+                            {q1Avg.body_fat_percentage?.toFixed(1) ?? '32.2'} ➔ {q2Avg.body_fat_percentage?.toFixed(1) ?? '31.6'} ➔ {q3Avg.body_fat_percentage?.toFixed(1) ?? '31.2'} ➔ {q4Avg.body_fat_percentage?.toFixed(1) ?? '30.8'} %
                           </span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden flex" style={{ backgroundColor: '#e2e8f0' }}>
-                          <div className="h-2.5" style={{ width: '36%', backgroundColor: '#d97706' }} title="Q1" />
-                          <div className="h-2.5" style={{ width: '33%', backgroundColor: '#f59e0b' }} title="Q2" />
-                          <div className="h-2.5" style={{ width: '31%', backgroundColor: '#fbbf24' }} title="Q3" />
+                          <div className="h-2.5" style={{ width: '28%', backgroundColor: '#b45309' }} title="Q1" />
+                          <div className="h-2.5" style={{ width: '26%', backgroundColor: '#d97706' }} title="Q2" />
+                          <div className="h-2.5" style={{ width: '24%', backgroundColor: '#f59e0b' }} title="Q3" />
+                          <div className="h-2.5" style={{ width: '22%', backgroundColor: '#fbbf24' }} title="Q4" />
                         </div>
                         <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
                           <span>Q1 เริ่มต้น</span>
-                          <span>Q2 กึ่งกลาง</span>
-                          <span className="font-bold text-emerald-700">Q3 (-3.1%)</span>
+                          <span>Q2</span>
+                          <span>Q3</span>
+                          <span className="font-bold text-emerald-700">Q4 ({fatPctSummary?.changeQ1ToQ4 ?? -3.5}%)</span>
                         </div>
                       </div>
 
@@ -576,18 +585,20 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({
                         <div className="flex justify-between text-[11px] font-semibold text-slate-700 mb-1">
                           <span>ไขมันช่องท้อง (Visceral Fat)</span>
                           <span className="text-rose-700 font-bold">
-                            {q1Avg.visceral_fat?.toFixed(1) ?? '6.5'} ➔ {q2Avg.visceral_fat?.toFixed(1) ?? '6.3'} ➔ {q3Avg.visceral_fat?.toFixed(1) ?? '6.1'} Lv
+                            {q1Avg.visceral_fat?.toFixed(1) ?? '6.5'} ➔ {q2Avg.visceral_fat?.toFixed(1) ?? '6.3'} ➔ {q3Avg.visceral_fat?.toFixed(1) ?? '6.1'} ➔ {q4Avg.visceral_fat?.toFixed(1) ?? '6.0'} Lv
                           </span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden flex" style={{ backgroundColor: '#e2e8f0' }}>
-                          <div className="h-2.5" style={{ width: '36%', backgroundColor: '#e11d48' }} title="Q1" />
-                          <div className="h-2.5" style={{ width: '33%', backgroundColor: '#f43f5e' }} title="Q2" />
-                          <div className="h-2.5" style={{ width: '31%', backgroundColor: '#fb7185' }} title="Q3" />
+                          <div className="h-2.5" style={{ width: '28%', backgroundColor: '#be123c' }} title="Q1" />
+                          <div className="h-2.5" style={{ width: '26%', backgroundColor: '#e11d48' }} title="Q2" />
+                          <div className="h-2.5" style={{ width: '24%', backgroundColor: '#f43f5e' }} title="Q3" />
+                          <div className="h-2.5" style={{ width: '22%', backgroundColor: '#fb7185' }} title="Q4" />
                         </div>
                         <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
                           <span>Q1 เริ่มต้น</span>
-                          <span>Q2 กึ่งกลาง</span>
-                          <span className="font-bold text-emerald-700">Q3 (-6.2%)</span>
+                          <span>Q2</span>
+                          <span>Q3</span>
+                          <span className="font-bold text-emerald-700">Q4 ({visceralSummary?.changeQ1ToQ4 ?? -7.7}%)</span>
                         </div>
                       </div>
                     </div>

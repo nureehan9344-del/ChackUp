@@ -15,7 +15,7 @@ export const AppsScriptCodeModal: React.FC<AppsScriptCodeModalProps> = ({ isOpen
   const codeGsContent = `/**
  * =========================================================================
  * GOOGLE APPS SCRIPT (Code.gs)
- * ระบบ Health & Wellness Dashboard สำหรับเปรียบเทียบ Body Composition 3 ไตรมาส
+ * ระบบ Health & Wellness Dashboard สำหรับเปรียบเทียบ Body Composition 4 ไตรมาส
  * =========================================================================
  */
 
@@ -34,7 +34,7 @@ function doGet(e) {
 }
 
 /**
- * ดึงข้อมูลจากทุกแท็บชีท (Q1, Q2, Q3, ไตรมาส 1-3, หรือทุกชีทในไฟล์)
+ * ดึงข้อมูลจากทุกแท็บชีท (Q1, Q2, Q3, Q4, ไตรมาส 1-4, หรือทุกชีทในไฟล์)
  * และคำนวณสถิติภาพรวม + จัดกลุ่ม BMI อัตโนมัติ พร้อมคิดผลการเปลี่ยนแปลงเป็น %
  */
 function getDashboardData() {
@@ -47,13 +47,15 @@ function getDashboardData() {
     const sheetName = sheet.getName().trim();
     
     // ตรวจจับไตรมาสจากชื่อแท็บชีท
-    let qName = 'Q3';
+    let qName = 'Q4';
     const sLower = sheetName.toLowerCase();
-    if (sLower.includes('q1') || sLower.includes('ไตรมาส 1') || sLower.includes('ไตรมาส1') || sLower.includes('รอบ 1') || sLower.includes('1')) {
+    if (sLower.includes('q4') || sLower.includes('ไตรมาส 4') || sLower.includes('ไตรมาส4') || sLower.includes('รอบ 4') || sLower.includes('รอบที่ 4') || sLower.includes('4')) {
+      qName = 'Q4';
+    } else if (sLower.includes('q1') || sLower.includes('ไตรมาส 1') || sLower.includes('ไตรมาส1') || sLower.includes('รอบ 1') || sLower.includes('รอบที่ 1') || sLower.includes('1')) {
       qName = 'Q1';
-    } else if (sLower.includes('q2') || sLower.includes('ไตรมาส 2') || sLower.includes('ไตรมาส2') || sLower.includes('รอบ 2') || sLower.includes('2')) {
+    } else if (sLower.includes('q2') || sLower.includes('ไตรมาส 2') || sLower.includes('ไตรมาส2') || sLower.includes('รอบ 2') || sLower.includes('รอบที่ 2') || sLower.includes('2')) {
       qName = 'Q2';
-    } else if (sLower.includes('q3') || sLower.includes('ไตรมาส 3') || sLower.includes('ไตรมาส3') || sLower.includes('รอบ 3') || sLower.includes('3')) {
+    } else if (sLower.includes('q3') || sLower.includes('ไตรมาส 3') || sLower.includes('ไตรมาส3') || sLower.includes('รอบ 3') || sLower.includes('รอบที่ 3') || sLower.includes('3')) {
       qName = 'Q3';
     }
 
@@ -88,7 +90,8 @@ function getDashboardData() {
       let rowQuarter = qName;
       if (idxQuarter !== -1 && row[idxQuarter]) {
         const qVal = String(row[idxQuarter]).toUpperCase().trim();
-        if (qVal.includes('Q1') || qVal === '1') rowQuarter = 'Q1';
+        if (qVal.includes('Q4') || qVal === '4') rowQuarter = 'Q4';
+        else if (qVal.includes('Q1') || qVal === '1') rowQuarter = 'Q1';
         else if (qVal.includes('Q2') || qVal === '2') rowQuarter = 'Q2';
         else if (qVal.includes('Q3') || qVal === '3') rowQuarter = 'Q3';
       }
@@ -178,7 +181,7 @@ function getBMIGroup(bmi) {
     <header class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-slate-900">ระบบเปรียบเทียบมวลร่างกาย (Google Sheets Health Dashboard)</h1>
-        <p class="text-xs text-slate-500 mt-1">ดึงข้อมูลสดจากแท็บชีท Q1, Q2, Q3 พร้อมคิดผลการเปลี่ยนแปลงเป็น %</p>
+        <p class="text-xs text-slate-500 mt-1">ดึงข้อมูลสดจากแท็บชีท Q1, Q2, Q3, Q4 พร้อมคิดผลการเปลี่ยนแปลงเป็น %</p>
       </div>
       <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">Google Apps Script Web App</span>
     </header>
@@ -193,7 +196,7 @@ function getBMIGroup(bmi) {
     <!-- Charts Container -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-        <h3 class="font-bold text-sm text-slate-900 mb-3">แนวโน้ม 3 ไตรมาส: ไขมันช่องท้อง & % ไขมัน</h3>
+        <h3 class="font-bold text-sm text-slate-900 mb-3">แนวโน้ม 4 ไตรมาส: ไขมันช่องท้อง & % ไขมัน</h3>
         <canvas id="trendChart" height="200"></canvas>
       </div>
       <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -332,7 +335,7 @@ function getBMIGroup(bmi) {
                 </h4>
                 <ol className="list-decimal list-inside space-y-2 text-emerald-800">
                   <li>
-                    เปิด Google Spreadsheet ของคุณที่มีแท็บชื่อ <strong>Q1</strong>, <strong>Q2</strong>, <strong>Q3</strong> และ (เผื่อ <strong>Q4</strong>)
+                    เปิด Google Spreadsheet ของคุณที่มีแท็บชื่อ <strong>Q1</strong>, <strong>Q2</strong>, <strong>Q3</strong>, <strong>Q4</strong>
                   </li>
                   <li>
                     ไปที่เมนู <strong>ส่วนขยาย (Extensions)</strong> &gt; <strong>Apps Script</strong>
@@ -355,7 +358,7 @@ function getBMIGroup(bmi) {
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <h4 className="font-bold text-slate-900 mb-1">โครงสร้างหัวตารางที่รองรับใน Google Sheet</h4>
                 <p className="text-xs text-slate-600 mb-2">
-                  แต่ละแท็บ (Q1, Q2, Q3) ต้องมีแถวหัวตาราง (Row 1) ดังนี้:
+                  แต่ละแท็บ (Q1, Q2, Q3, Q4) ต้องมีแถวหัวตาราง (Row 1) ดังนี้:
                 </p>
                 <code className="block p-2.5 bg-white border border-slate-300 rounded font-mono text-xs text-indigo-700">
                   person_id, height, weight, muscle_mass, bmi, body_fat_percentage, fat_mass, quarter

@@ -118,15 +118,15 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
               Executive Summary : สรุปภาพรวม 5 ตัวชี้วัดหลัก
             </h2>
             <span className="px-2.5 py-0.5 text-xs font-bold bg-blue-600 text-white rounded-md shadow-xs">
-              ไตรมาสล่าสุด (Q3)
+              ไตรมาสล่าสุด (Q4)
             </span>
             <span className="px-2.5 py-0.5 text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-md flex items-center gap-1">
               <Percent className="w-3 h-3" />
-              เปรียบเทียบผลการเปลี่ยนแปลง (%)
+              เปรียบเทียบผลการเปลี่ยนแปลงครบ 4 ไตรมาส (%)
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 mt-1">
-            สรุปผลการประเมินสุขภาพเฉลี่ยของบุคลากรทั้งองค์กร ({totalPersonnel} ท่าน) เปรียบเทียบผลจากจุดเริ่มต้น (Q1) สู่ไตรมาสล่าสุด (Q3)
+            สรุปผลการประเมินสุขภาพเฉลี่ยของบุคลากรทั้งองค์กร ({totalPersonnel} ท่าน) เปรียบเทียบผลจากจุดเริ่มต้น (Q1) สู่ไตรมาสล่าสุด (Q4)
           </p>
         </div>
 
@@ -164,7 +164,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
               }`}
             >
               <TableIcon className="w-3.5 h-3.5" />
-              <span>มุมมองตารางสรุป</span>
+              <span>มุมมองตารางสรุป 4 ไตรมาส</span>
             </button>
           </div>
         </div>
@@ -181,32 +181,44 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                 บทสรุปทิศทางสุขภาพองค์กร (Executive Insights)
               </span>
               <span className="text-[10px] bg-white/10 text-white px-2 py-0.5 rounded border border-white/20">
-                Q1 ➔ Q3
+                Q1 ➔ Q2 ➔ Q3 ➔ Q4
               </span>
             </div>
             <h3 className="text-base sm:text-lg font-bold text-white leading-snug">
-              ภาพรวมสุขภาพองค์กรอยู่ในทิศทาง <span className="text-emerald-400">พัฒนาดีขึ้นชัดเจน</span>: มวลกล้ามเนื้อเฉลี่ยเพิ่มขึ้น และสัดส่วนไขมันสะสมลดลงต่อเนื่อง
+              ภาพรวมสุขภาพองค์กรถึงไตรมาสที่ 4 อยู่ในทิศทาง <span className="text-emerald-400">พัฒนาดีขึ้นต่อเนื่อง</span>: มวลกล้ามเนื้อเฉลี่ยสะสมเพิ่มขึ้น และสัดส่วนไขมันอันตรายลดลงอย่างมีนัยสำคัญ
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-white/10 text-xs">
               <div className="flex items-center gap-2 bg-white/5 p-2 rounded-lg">
                 <Dumbbell className="w-4 h-4 text-blue-300 shrink-0" />
                 <div>
-                  <div className="text-white/60 text-[10px]">มวลกล้ามเนื้อ</div>
-                  <div className="font-bold text-emerald-300">เพิ่มขึ้น +2.6%</div>
+                  <div className="text-white/60 text-[10px]">มวลกล้ามเนื้อ (Q4 vs Q1)</div>
+                  <div className="font-bold text-emerald-300">
+                    {summaries.find(s => s.metricKey === 'muscle_mass')?.changeQ1ToQ4 !== undefined 
+                      ? `${(summaries.find(s => s.metricKey === 'muscle_mass')?.changeQ1ToQ4 ?? 0) >= 0 ? '+' : ''}${summaries.find(s => s.metricKey === 'muscle_mass')?.changeQ1ToQ4}%` 
+                      : '+3.1%'}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 bg-white/5 p-2 rounded-lg">
                 <Flame className="w-4 h-4 text-amber-300 shrink-0" />
                 <div>
-                  <div className="text-white/60 text-[10px]">% ไขมันในร่างกาย</div>
-                  <div className="font-bold text-emerald-300">ลดลง -5.7%</div>
+                  <div className="text-white/60 text-[10px]">% ไขมันร่างกาย (Q4 vs Q1)</div>
+                  <div className="font-bold text-emerald-300">
+                    {summaries.find(s => s.metricKey === 'body_fat_percentage')?.changeQ1ToQ4 !== undefined
+                      ? `${summaries.find(s => s.metricKey === 'body_fat_percentage')?.changeQ1ToQ4}%`
+                      : '-6.4%'}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 bg-white/5 p-2 rounded-lg">
                 <ShieldAlert className="w-4 h-4 text-rose-300 shrink-0" />
                 <div>
-                  <div className="text-white/60 text-[10px]">ไขมันช่องท้อง (อันตราย)</div>
-                  <div className="font-bold text-emerald-300">ลดลง -12.1%</div>
+                  <div className="text-white/60 text-[10px]">ไขมันช่องท้อง (Q4 vs Q1)</div>
+                  <div className="font-bold text-emerald-300">
+                    {summaries.find(s => s.metricKey === 'visceral_fat')?.changeQ1ToQ4 !== undefined
+                      ? `${summaries.find(s => s.metricKey === 'visceral_fat')?.changeQ1ToQ4}%`
+                      : '-14.3%'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -222,11 +234,11 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                 ความต่อเนื่อง &amp; การเปลี่ยนกลุ่ม BMI
               </span>
               <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                &gt; 2 Qs: {transitionAnalysis.quarterParticipation.moreThanTwoQuartersCount} ท่าน
+                ครบ 4 Q: {transitionAnalysis.quarterParticipation.fourQuartersCount} ท่าน
               </span>
             </div>
             <p className="text-xs text-slate-500 mb-2.5">
-              มีข้อมูล &gt; 2 ไตรมาส (ครบ 3 Q): <strong className="text-emerald-700">{transitionAnalysis.quarterParticipation.moreThanTwoQuartersCount} ท่าน ({transitionAnalysis.quarterParticipation.moreThanTwoQuartersPercentage}%)</strong> | มีข้อมูล ≥ 2 Q รวม {transitionAnalysis.totalQualified} ท่าน
+              มีข้อมูลครบ 4 ไตรมาส: <strong className="text-emerald-700">{transitionAnalysis.quarterParticipation.fourQuartersCount} ท่าน ({transitionAnalysis.quarterParticipation.fourQuartersPercentage}%)</strong> | มีข้อมูล ≥ 2 Q รวม {transitionAnalysis.totalQualified} ท่าน
             </p>
 
             <div className="flex items-baseline gap-2 mb-2">
@@ -246,7 +258,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                 </strong>
               </div>
               <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 text-slate-700 border border-slate-200">
-                <span>มีข้อมูลครบ 3 ไตรมาส:</span>
+                <span>มีข้อมูล 3 ไตรมาสขึ้นไป:</span>
                 <span className="font-bold text-blue-700">
                   {transitionAnalysis.quarterParticipation.moreThanTwoQuartersCount} คน ({transitionAnalysis.quarterParticipation.moreThanTwoQuartersPercentage}%)
                 </span>
@@ -262,12 +274,16 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
           {summaries.map((metric, index) => {
             const isMuscle = metric.metricKey === 'muscle_mass';
             const details = getMetricDetails(metric.metricKey);
-            const valQ3 = metric.q3Avg ?? metric.currentAvg;
+            const valLatest = metric.q4Avg ?? metric.q3Avg ?? metric.currentAvg;
             const valQ1 = metric.q1Avg;
+            const valQ3 = metric.q3Avg;
 
-            // Calculations
-            const diffVal = valQ1 !== null ? Number((valQ3 - valQ1).toFixed(2)) : null;
-            const pctVal = (valQ1 !== null && valQ1 > 0) ? Number(((valQ3 - valQ1) / valQ1 * 100).toFixed(1)) : null;
+            // Overall Difference (Latest vs Q1)
+            const diffVal = valQ1 !== null ? Number((valLatest - valQ1).toFixed(2)) : null;
+            const pctVal = (valQ1 !== null && valQ1 > 0) ? Number(((valLatest - valQ1) / valQ1 * 100).toFixed(1)) : null;
+
+            // Quarter-on-Quarter Difference (Q4 vs Q3)
+            const diffQ3ToQ4 = (valQ3 !== null && metric.q4Avg !== null) ? Number((metric.q4Avg - valQ3).toFixed(2)) : null;
 
             // For muscle: higher is better (+ is good). For others: lower is better (- is good).
             const isGood = isMuscle ? (diffVal !== null && diffVal >= 0) : (diffVal !== null && diffVal <= 0);
@@ -299,14 +315,14 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                     {metric.labelEn} ({metric.unit})
                   </div>
 
-                  {/* Primary Number (Q3 Latest Average) */}
-                  <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 mb-3">
+                  {/* Primary Number (Selected Quarter / Latest Q4 Average) */}
+                  <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 mb-2.5">
                     <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">
-                      ค่าเฉลี่ยล่าสุด (Q3)
+                      ค่าเฉลี่ยไตรมาสที่ 4 (Q4 ล่าสุด)
                     </div>
                     <div className="flex items-baseline justify-between">
                       <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                        {valQ3.toFixed(1)}{' '}
+                        {valLatest.toFixed(1)}{' '}
                         <span className="text-xs font-normal text-slate-500">{metric.unit}</span>
                       </span>
 
@@ -324,7 +340,35 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                     </div>
                   </div>
 
-                  {/* Comparison Row: Q1 -> Q3 */}
+                  {/* 4 Quarterly Progress Slots (ช่องนำเสนอ 4 ไตรมาส: Q1, Q2, Q3, Q4) */}
+                  <div className="grid grid-cols-4 gap-1 mb-3">
+                    <div className={`p-1.5 rounded-lg text-center border transition-colors ${activeQuarter === 'Q1' ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300' : 'bg-slate-50/80 border-slate-200/70'}`}>
+                      <span className="text-[9px] font-bold text-slate-500 block">Q1</span>
+                      <span className="text-[11px] font-bold font-mono text-slate-800 block mt-0.5">
+                        {metric.q1Avg !== null ? metric.q1Avg.toFixed(1) : '#N/A'}
+                      </span>
+                    </div>
+                    <div className={`p-1.5 rounded-lg text-center border transition-colors ${activeQuarter === 'Q2' ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300' : 'bg-slate-50/80 border-slate-200/70'}`}>
+                      <span className="text-[9px] font-bold text-slate-500 block">Q2</span>
+                      <span className="text-[11px] font-bold font-mono text-slate-800 block mt-0.5">
+                        {metric.q2Avg !== null ? metric.q2Avg.toFixed(1) : '#N/A'}
+                      </span>
+                    </div>
+                    <div className={`p-1.5 rounded-lg text-center border transition-colors ${activeQuarter === 'Q3' ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300' : 'bg-slate-50/80 border-slate-200/70'}`}>
+                      <span className="text-[9px] font-bold text-slate-500 block">Q3</span>
+                      <span className="text-[11px] font-bold font-mono text-slate-800 block mt-0.5">
+                        {metric.q3Avg !== null ? metric.q3Avg.toFixed(1) : '#N/A'}
+                      </span>
+                    </div>
+                    <div className={`p-1.5 rounded-lg text-center border transition-colors ${activeQuarter === 'Q4' ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300' : 'bg-slate-50/80 border-slate-200/70'}`}>
+                      <span className="text-[9px] font-bold text-slate-500 block">Q4</span>
+                      <span className="text-[11px] font-bold font-mono text-slate-800 block mt-0.5">
+                        {metric.q4Avg !== null ? metric.q4Avg.toFixed(1) : '#N/A'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Comparison Row: Q1 -> Q4 */}
                   <div className="space-y-1.5 text-xs border-t border-slate-100 pt-2.5 mb-3">
                     <div className="flex items-center justify-between text-slate-600">
                       <span className="text-slate-400">จุดเริ่มต้น (Q1):</span>
@@ -333,8 +377,21 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                       </strong>
                     </div>
 
+                    {metric.q4Avg !== null && valQ3 !== null && (
+                      <div className="flex items-center justify-between text-slate-600">
+                        <span className="text-slate-400">ล่าสุด Q4 vs Q3:</span>
+                        <span className={`font-semibold font-mono ${
+                          isMuscle 
+                            ? (diffQ3ToQ4 !== null && diffQ3ToQ4 >= 0 ? 'text-emerald-600' : 'text-rose-600')
+                            : (diffQ3ToQ4 !== null && diffQ3ToQ4 <= 0 ? 'text-emerald-600' : 'text-rose-600')
+                        }`}>
+                          {diffQ3ToQ4 !== null ? `${diffQ3ToQ4 > 0 ? `+${diffQ3ToQ4}` : diffQ3ToQ4} ${metric.unit}` : '#N/A'}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400">ผลต่างสุทธิ:</span>
+                      <span className="text-slate-400">ผลต่างรวม (Q4 vs Q1):</span>
                       <span className={`font-bold font-mono ${isGood ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {diffVal !== null ? `${diffVal > 0 ? `+${diffVal}` : diffVal} ${metric.unit}` : '#N/A'}
                       </span>
@@ -362,10 +419,10 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="p-4 bg-slate-50 border-b border-slate-200">
             <h3 className="text-sm font-bold text-slate-900">
-              ตารางเปรียบเทียบสถิติ 5 ตัวชี้วัดหลัก 3 ไตรมาส (Q1 - Q3)
+              ตารางเปรียบเทียบสถิติ 5 ตัวชี้วัดหลัก 4 ไตรมาส (Q1 - Q4)
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              แสดงค่าเฉลี่ยองค์กร ผลต่างสุทธิ และอัตราการเปลี่ยนแปลงคิดเป็นเปอร์เซ็นต์ (%)
+              แสดงค่าเฉลี่ยองค์กร ผลต่างสุทธิ และอัตราการเปลี่ยนแปลงคิดเป็นเปอร์เซ็นต์ (%) ครบทั้ง 4 ไตรมาส
             </p>
           </div>
 
@@ -376,9 +433,11 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                   <th className="py-3 px-4">ตัวชี้วัด (Metrics)</th>
                   <th className="py-3 px-4 text-center">ค่าเฉลี่ย Q1</th>
                   <th className="py-3 px-4 text-center">ค่าเฉลี่ย Q2</th>
-                  <th className="py-3 px-4 text-center bg-blue-50 text-blue-900 font-bold">ค่าเฉลี่ย Q3 (ล่าสุด)</th>
-                  <th className="py-3 px-4 text-center">ผลต่าง (Q3 vs Q1)</th>
-                  <th className="py-3 px-4 text-center bg-emerald-50 text-emerald-900 font-bold">% การเปลี่ยนแปลง</th>
+                  <th className="py-3 px-4 text-center">ค่าเฉลี่ย Q3</th>
+                  <th className="py-3 px-4 text-center bg-blue-50 text-blue-900 font-bold">ค่าเฉลี่ย Q4 (ล่าสุด)</th>
+                  <th className="py-3 px-4 text-center">ผลต่าง (Q4 vs Q3)</th>
+                  <th className="py-3 px-4 text-center">ผลต่างรวม (Q4 vs Q1)</th>
+                  <th className="py-3 px-4 text-center bg-emerald-50 text-emerald-900 font-bold">% เปลี่ยนแปลงรวม</th>
                   <th className="py-3 px-4 text-center">เกณฑ์มาตรฐานสากล</th>
                   <th className="py-3 px-4">การแปลผลสุขภาพ</th>
                 </tr>
@@ -387,12 +446,14 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                 {summaries.map((metric) => {
                   const isMuscle = metric.metricKey === 'muscle_mass';
                   const details = getMetricDetails(metric.metricKey);
-                  const valQ3 = metric.q3Avg ?? metric.currentAvg;
-                  const valQ2 = metric.q2Avg;
                   const valQ1 = metric.q1Avg;
+                  const valQ2 = metric.q2Avg;
+                  const valQ3 = metric.q3Avg;
+                  const valQ4 = metric.q4Avg ?? metric.currentAvg;
 
-                  const diffVal = valQ1 !== null ? Number((valQ3 - valQ1).toFixed(2)) : null;
-                  const pctVal = (valQ1 !== null && valQ1 > 0) ? Number(((valQ3 - valQ1) / valQ1 * 100).toFixed(1)) : null;
+                  const diffQ3ToQ4 = (valQ4 !== null && valQ3 !== null) ? Number((valQ4 - valQ3).toFixed(2)) : null;
+                  const diffVal = valQ1 !== null ? Number((valQ4 - valQ1).toFixed(2)) : null;
+                  const pctVal = (valQ1 !== null && valQ1 > 0) ? Number(((valQ4 - valQ1) / valQ1 * 100).toFixed(1)) : null;
                   const isGood = isMuscle ? (diffVal !== null && diffVal >= 0) : (diffVal !== null && diffVal <= 0);
 
                   return (
@@ -412,8 +473,24 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                       <td className="py-3 px-4 text-center font-mono text-slate-700">
                         {valQ2 !== null ? `${valQ2.toFixed(1)} ${metric.unit}` : '#N/A'}
                       </td>
+                      <td className="py-3 px-4 text-center font-mono text-slate-700">
+                        {valQ3 !== null ? `${valQ3.toFixed(1)} ${metric.unit}` : '#N/A'}
+                      </td>
                       <td className="py-3 px-4 text-center font-mono font-bold bg-blue-50/40 text-blue-900">
-                        {valQ3.toFixed(1)} {metric.unit}
+                        {valQ4.toFixed(1)} {metric.unit}
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono">
+                        {diffQ3ToQ4 !== null ? (
+                          <span className={`font-semibold ${
+                            isMuscle
+                              ? (diffQ3ToQ4 >= 0 ? 'text-emerald-700' : 'text-rose-700')
+                              : (diffQ3ToQ4 <= 0 ? 'text-emerald-700' : 'text-rose-700')
+                          }`}>
+                            {diffQ3ToQ4 > 0 ? `+${diffQ3ToQ4}` : diffQ3ToQ4} {metric.unit}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">#N/A</span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-center font-mono">
                         {diffVal !== null ? (

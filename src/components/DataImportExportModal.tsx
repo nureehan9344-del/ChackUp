@@ -51,10 +51,10 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'sheet_url' | 'upload_file' | 'paste_csv' | 'export'>('sheet_url');
   const [sheetUrlInput, setSheetUrlInput] = useState(currentSheetUrl);
-  const [customTabsInput, setCustomTabsInput] = useState('Q1, Q2, Q3, ไตรมาส 1, ไตรมาส 2, ไตรมาส 3');
+  const [customTabsInput, setCustomTabsInput] = useState('Q1, Q2, Q3, Q4, ไตรมาส 1, ไตรมาส 2, ไตรมาส 3, ไตรมาส 4');
   const [showAdvancedTabs, setShowAdvancedTabs] = useState(false);
   const [pastedCsv, setPastedCsv] = useState('');
-  const [pastedQuarter, setPastedQuarter] = useState<'AUTO' | 'Q1' | 'Q2' | 'Q3'>('AUTO');
+  const [pastedQuarter, setPastedQuarter] = useState<'AUTO' | 'Q1' | 'Q2' | 'Q3' | 'Q4'>('AUTO');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState<string>('');
   const [lastFetchResult, setLastFetchResult] = useState<MultiSheetFetchResult | null>(null);
@@ -88,14 +88,14 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
 
       if (result.records.length === 0) {
         throw new Error(
-          'ไม่พบข้อมูลในชีทที่ระบุ กรุณาตรวจสอบว่าแชร์สิทธิ์เป็น "ทุกคนที่มีลิงก์ (Anyone with the link)" และชื่อแท็บตรงกับ Q1, Q2, Q3'
+          'ไม่พบข้อมูลในชีทที่ระบุ กรุณาตรวจสอบว่าแชร์สิทธิ์เป็น "ทุกคนที่มีลิงก์ (Anyone with the link)" และชื่อแท็บตรงกับ Q1, Q2, Q3, Q4'
         );
       }
 
       onImportNewRecords(result.records, sheetUrlInput.trim(), 'sheet_live');
 
       const tabsFound = result.fetchedTabs.join(', ') || 'ค่าเริ่มต้น';
-      const qSummary = `Q1: ${result.quarterCounts.Q1.toLocaleString()} | Q2: ${result.quarterCounts.Q2.toLocaleString()} | Q3: ${result.quarterCounts.Q3.toLocaleString()}`;
+      const qSummary = `Q1: ${result.quarterCounts.Q1.toLocaleString()} | Q2: ${result.quarterCounts.Q2.toLocaleString()} | Q3: ${result.quarterCounts.Q3.toLocaleString()} | Q4: ${result.quarterCounts.Q4.toLocaleString()}`;
 
       setStatusMessage({
         text: `ดึงข้อมูลครบทุกชีทสำเร็จ รวม ${result.records.length.toLocaleString()} รายการ (${qSummary}) จากแท็บ [${tabsFound}]`,
@@ -166,9 +166,10 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
             const q1Count = finalRecords.filter((r) => r.quarter === 'Q1').length;
             const q2Count = finalRecords.filter((r) => r.quarter === 'Q2').length;
             const q3Count = finalRecords.filter((r) => r.quarter === 'Q3').length;
+            const q4Count = finalRecords.filter((r) => r.quarter === 'Q4').length;
 
             setStatusMessage({
-              text: `รวมข้อมูลจาก ${files.length} ไฟล์สำเร็จ รวม ${finalRecords.length.toLocaleString()} รายการ (Q1: ${q1Count}, Q2: ${q2Count}, Q3: ${q3Count}) บันทึกเรียบร้อย!`,
+              text: `รวมข้อมูลจาก ${files.length} ไฟล์สำเร็จ รวม ${finalRecords.length.toLocaleString()} รายการ (Q1: ${q1Count}, Q2: ${q2Count}, Q3: ${q3Count}, Q4: ${q4Count}) บันทึกเรียบร้อย!`,
               type: 'success',
             });
             setIsLoading(false);
@@ -209,9 +210,10 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
     const q1Count = parsed.filter((r) => r.quarter === 'Q1').length;
     const q2Count = parsed.filter((r) => r.quarter === 'Q2').length;
     const q3Count = parsed.filter((r) => r.quarter === 'Q3').length;
+    const q4Count = parsed.filter((r) => r.quarter === 'Q4').length;
 
     setStatusMessage({
-      text: `นำเข้าสำเร็จ ${parsed.length.toLocaleString()} รายการ (Q1: ${q1Count}, Q2: ${q2Count}, Q3: ${q3Count}) อัปเดตและบันทึก Dashboard แล้ว`,
+      text: `นำเข้าสำเร็จ ${parsed.length.toLocaleString()} รายการ (Q1: ${q1Count}, Q2: ${q2Count}, Q3: ${q3Count}, Q4: ${q4Count}) อัปเดตและบันทึก Dashboard แล้ว`,
       type: 'success',
     });
 
@@ -272,7 +274,7 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
                 ดึงและเชื่อมต่อข้อมูลทุกชีท (Multi-Sheet Google Sync &amp; Data Hub)
               </h3>
               <p className="text-xs text-slate-500">
-                ดึงข้อมูลครบทุกแท็บ (Q1, Q2, Q3) อัตโนมัติจาก Google Sheet เดียวกัน หรืออัปโหลดไฟล์รวม
+                ดึงข้อมูลครบทุกแท็บ (Q1, Q2, Q3, Q4) อัตโนมัติจาก Google Sheet เดียวกัน หรืออัปโหลดไฟล์รวม
               </p>
             </div>
           </div>
@@ -365,10 +367,10 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
               <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 text-xs text-emerald-950 space-y-2">
                 <div className="font-bold flex items-center gap-1.5 text-emerald-900">
                   <Sparkles className="w-4 h-4 text-emerald-600" />
-                  ดึงข้อมูลครบทุกแท็บชีท (Q1, Q2, Q3) ในคลิกเดียว
+                  ดึงข้อมูลครบทุกแท็บชีท (Q1, Q2, Q3, Q4) ในคลิกเดียว
                 </div>
                 <p className="text-emerald-800 leading-relaxed">
-                  ระบบจะสแกนและดึงข้อมูลจากทุกแท็บใน Google Spreadsheet ของคุณโดยอัตโนมัติ (เช่น แท็บ <strong>Q1</strong>, <strong>Q2</strong>, <strong>Q3</strong> หรือ <strong>ไตรมาส 1, 2, 3</strong>) แล้วรวมเป็นชุดข้อมูลเดียวเพื่อนำมาเปรียบเทียบการเปลี่ยนแปลง
+                  ระบบจะสแกนและดึงข้อมูลจากทุกแท็บใน Google Spreadsheet ของคุณโดยอัตโนมัติ (เช่น แท็บ <strong>Q1</strong>, <strong>Q2</strong>, <strong>Q3</strong>, <strong>Q4</strong> หรือ <strong>ไตรมาส 1, 2, 3, 4</strong>) แล้วรวมเป็นชุดข้อมูลเดียวเพื่อนำมาเปรียบเทียบการเปลี่ยนแปลง
                 </p>
                 <div className="pt-1 flex items-center gap-2 text-[11px] font-semibold text-emerald-700">
                   <span>✓ ตรวจจับชื่อแท็บอัตโนมัติ</span>
@@ -436,11 +438,11 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
                       type="text"
                       value={customTabsInput}
                       onChange={(e) => setCustomTabsInput(e.target.value)}
-                      placeholder="Q1, Q2, Q3, ไตรมาส 1, ไตรมาส 2, ไตรมาส 3, Sheet1"
+                      placeholder="Q1, Q2, Q3, Q4, ไตรมาส 1, ไตรมาส 2, ไตรมาส 3, ไตรมาส 4, Sheet1"
                       className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 font-mono"
                     />
                     <p className="text-[10px] text-slate-400">
-                      * ระบบจะทำการค้นหาและดึงข้อมูลจากชื่อแท็บเหล่านี้มาประกอบกันเป็น 3 ไตรมาส
+                      * ระบบจะทำการค้นหาและดึงข้อมูลจากชื่อแท็บเหล่านี้มาประกอบกันเป็น 4 ไตรมาส
                     </p>
                   </div>
                 )}
@@ -464,10 +466,10 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
               <div className="border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-2xl p-8 text-center bg-indigo-50/20 hover:bg-indigo-50/40 transition-colors">
                 <Upload className="w-10 h-10 text-indigo-500 mx-auto mb-3" />
                 <h4 className="font-bold text-sm text-slate-800 mb-1">
-                  เลือกหลายไฟล์พร้อมกัน (Multiple Files: Q1, Q2, Q3)
+                  เลือกหลายไฟล์พร้อมกัน (Multiple Files: Q1, Q2, Q3, Q4)
                 </h4>
                 <p className="text-xs text-slate-500 mb-4 max-w-md mx-auto">
-                  คุณสามารถกดเลือกไฟล์ <code>Q1.csv</code>, <code>Q2.csv</code>, <code>Q3.csv</code> พร้อมกันได้เลย ระบบจะรวมข้อมูลของทุกไตรมาสเข้าด้วยกันให้อัตโนมัติ
+                  คุณสามารถกดเลือกไฟล์ <code>Q1.csv</code>, <code>Q2.csv</code>, <code>Q3.csv</code>, <code>Q4.csv</code> พร้อมกันได้เลย ระบบจะรวมข้อมูลของทุกไตรมาสเข้าด้วยกันให้อัตโนมัติ
                 </p>
                 <label className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-xs transition-colors">
                   <Plus className="w-4 h-4" />
@@ -502,12 +504,13 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
                     <option value="Q1">กำหนดเป็น Q1 ทั้งหมด</option>
                     <option value="Q2">กำหนดเป็น Q2 ทั้งหมด</option>
                     <option value="Q3">กำหนดเป็น Q3 ทั้งหมด</option>
+                    <option value="Q4">กำหนดเป็น Q4 ทั้งหมด</option>
                   </select>
                 </div>
               </div>
               <textarea
                 rows={6}
-                placeholder="person_id,quarter,height,weight,muscle_mass,bmi,body_fat_percentage,fat_mass,visceral_fat&#10;43666,Q1,160,58.8,22.5,22.97,29.1,17.1,5&#10;43666,Q2,160,60.3,22.2,23.55,31.8,19.2,7&#10;43666,Q3,160,56.6,21.7,22.11,29.1,16.5,6"
+                placeholder="person_id,quarter,height,weight,muscle_mass,bmi,body_fat_percentage,fat_mass,visceral_fat&#10;43666,Q1,160,58.8,22.5,22.97,29.1,17.1,5&#10;43666,Q2,160,60.3,22.2,23.55,31.8,19.2,7&#10;43666,Q3,160,56.6,21.7,22.11,29.1,16.5,6&#10;43666,Q4,160,55.2,21.9,21.56,27.5,15.2,5"
                 value={pastedCsv}
                 onChange={(e) => setPastedCsv(e.target.value)}
                 className="w-full p-3 font-mono text-xs border border-slate-300 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"
@@ -559,8 +562,8 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
                 <p className="text-xs text-slate-600 mb-3">
                   ส่งออกข้อมูลที่กำลังแสดงอยู่ทั้งหมด ({records.length.toLocaleString()} รายการ) เป็นไฟล์ CSV เพื่อนำไปเปิดใน Excel หรือ Google Sheet ได้ทันที
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {['Q1', 'Q2', 'Q3', 'ALL'].map((q) => (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {['Q1', 'Q2', 'Q3', 'Q4', 'ALL'].map((q) => (
                     <button
                       key={q}
                       onClick={() => handleExportCsv(q)}
@@ -579,7 +582,7 @@ export const DataImportExportModal: React.FC<DataImportExportModalProps> = ({
             <div className="pt-3 border-t border-slate-200 flex items-center justify-between bg-slate-50 p-3 rounded-xl">
               <div className="text-xs text-slate-600">
                 <span className="font-semibold text-slate-800">ต้องการกลับไปใช้ชุดข้อมูลมาตรฐาน?</span>
-                <p className="text-[11px] text-slate-500">โหลดชุดข้อมูลตัวอย่างองค์กร 3 ไตรมาส (2,721 ท่าน)</p>
+                <p className="text-[11px] text-slate-500">โหลดชุดข้อมูลตัวอย่างองค์กร 4 ไตรมาส (2,721 ท่าน)</p>
               </div>
               <button
                 onClick={() => {

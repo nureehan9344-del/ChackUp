@@ -44,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 mt-0.5 hidden sm:block">
-                เปรียบเทียบผลตรวจมวลร่างกาย 3 ไตรมาส (บุคลากร {totalPersonnel} ท่าน)
+                เปรียบเทียบผลตรวจมวลร่างกาย 4 ไตรมาส (บุคลากร {totalPersonnel} ท่าน)
               </p>
             </div>
           </div>
@@ -53,7 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Quarter Quick Selector */}
             <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200">
-              {(['Q1', 'Q2', 'Q3'] as Quarter[]).map((q) => (
+              {(['Q1', 'Q2', 'Q3', 'Q4'] as Quarter[]).map((q) => (
                 <button
                   key={q}
                   onClick={() => onSelectQuarter(q)}
@@ -63,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {q === 'Q3' ? `${q} (ล่าสุด)` : q}
+                  {q === 'Q4' ? `${q} (ล่าสุด)` : q}
                 </button>
               ))}
             </div>

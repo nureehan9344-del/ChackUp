@@ -76,7 +76,7 @@ export default function App() {
 
   const [filters, setFilters] = useState<FilterState>({
     viewMode: 'organization',
-    selectedQuarter: 'Q3',
+    selectedQuarter: 'Q4',
     selectedPersonId: null,
     searchQuery: '',
     bmiGroupFilter: 'all',
@@ -196,10 +196,10 @@ export default function App() {
 
       // Risk filter
       if (filters.riskFilter !== 'all') {
-        const q3 = p.quarters.Q3 || p.quarters.Q2 || p.quarters.Q1;
-        if (filters.riskFilter === 'high_visceral' && (q3?.visceral_fat ?? 0) < 10) return false;
-        if (filters.riskFilter === 'high_fat' && (q3?.body_fat_percentage ?? 0) < 30) return false;
-        if (filters.riskFilter === 'healthy' && ((q3?.visceral_fat ?? 0) >= 10 || (q3?.body_fat_percentage ?? 0) >= 30)) return false;
+        const latest = p.quarters.Q4 || p.quarters.Q3 || p.quarters.Q2 || p.quarters.Q1;
+        if (filters.riskFilter === 'high_visceral' && (latest?.visceral_fat ?? 0) < 10) return false;
+        if (filters.riskFilter === 'high_fat' && (latest?.body_fat_percentage ?? 0) < 30) return false;
+        if (filters.riskFilter === 'healthy' && ((latest?.visceral_fat ?? 0) >= 10 || (latest?.body_fat_percentage ?? 0) >= 30)) return false;
       }
 
       return true;

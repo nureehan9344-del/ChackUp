@@ -8,7 +8,9 @@ export function buildPersonsFromRecords(records: BodyCompositionRecord[]): Perso
   const map = new Map<string, {
     person_id: string;
     height: number;
-    quarters: { Q1?: BodyCompositionRecord; Q2?: BodyCompositionRecord; Q3?: BodyCompositionRecord };
+    gender?: 'M' | 'F';
+    age?: number;
+    quarters: { Q1?: BodyCompositionRecord; Q2?: BodyCompositionRecord; Q3?: BodyCompositionRecord; Q4?: BodyCompositionRecord };
   }>();
 
   records.forEach((r) => {
@@ -18,30 +20,35 @@ export function buildPersonsFromRecords(records: BodyCompositionRecord[]): Perso
       entry = {
         person_id: r.person_id,
         height: r.height || 160,
+        gender: r.gender,
+        age: r.age,
         quarters: {},
       };
       map.set(r.person_id, entry);
     }
-    if (r.quarter === 'Q1' || r.quarter === 'Q2' || r.quarter === 'Q3') {
+    if (r.quarter === 'Q1' || r.quarter === 'Q2' || r.quarter === 'Q3' || r.quarter === 'Q4') {
       entry.quarters[r.quarter] = r;
       if (r.height) entry.height = r.height;
+      if (r.gender) entry.gender = r.gender;
+      if (r.age) entry.age = r.age;
     }
   });
 
   const persons: PersonSummary[] = [];
 
   map.forEach((entry) => {
+    const q4 = entry.quarters.Q4;
     const q3 = entry.quarters.Q3;
     const q2 = entry.quarters.Q2;
     const q1 = entry.quarters.Q1;
 
-    const latest = q3 || q2 || q1;
+    const latest = q4 || q3 || q2 || q1;
     if (!latest) return;
 
-    const latestQuarter: Quarter = q3 ? 'Q3' : q2 ? 'Q2' : 'Q1';
-    const baseline = (latest !== q1 && q1) ? q1 : (latest !== q2 && q2) ? q2 : latest;
+    const latestQuarter: Quarter = q4 ? 'Q4' : q3 ? 'Q3' : q2 ? 'Q2' : 'Q1';
+    const baseline = (latest !== q1 && q1) ? q1 : (latest !== q2 && q2) ? q2 : (latest !== q3 && q3) ? q3 : latest;
 
-    const completeness: 'complete' | 'partial' = (q1 && q2 && q3) ? 'complete' : 'partial';
+    const completeness: 'complete' | 'partial' = (q1 && q2 && q3 && q4) ? 'complete' : 'partial';
 
     let fatPercentageChange: number | null = null;
     let fatPercentageChangePct: number | null = null;
@@ -96,6 +103,8 @@ export function buildPersonsFromRecords(records: BodyCompositionRecord[]): Perso
     persons.push({
       person_id: entry.person_id,
       height: entry.height,
+      gender: entry.gender,
+      age: entry.age,
       quarters: entry.quarters,
       latestQuarter,
       completeness,
@@ -154,6 +163,7 @@ export function computeMetricSummaries(records: BodyCompositionRecord[]): Metric
   const q1 = calculateQuarterAverages(records, 'Q1');
   const q2 = calculateQuarterAverages(records, 'Q2');
   const q3 = calculateQuarterAverages(records, 'Q3');
+  const q4 = calculateQuarterAverages(records, 'Q4');
 
   const createSummary = (
     key: 'muscle_mass' | 'bmi' | 'body_fat_percentage' | 'fat_mass' | 'visceral_fat' | 'weight',
@@ -166,7 +176,8 @@ export function computeMetricSummaries(records: BodyCompositionRecord[]): Metric
     const q1Val = q1[key];
     const q2Val = q2[key];
     const q3Val = q3[key];
-    const current = q3Val ?? q2Val ?? q1Val ?? 0;
+    const q4Val = q4[key];
+    const current = q4Val ?? q3Val ?? q2Val ?? q1Val ?? 0;
 
     const diffQ2ToQ3Val = (q3Val !== null && q2Val !== null)
       ? Number((q3Val - q2Val).toFixed(2))
@@ -176,6 +187,14 @@ export function computeMetricSummaries(records: BodyCompositionRecord[]): Metric
       ? Number((q3Val - q1Val).toFixed(2))
       : 0;
 
+    const diffQ3ToQ4Val = (q4Val !== null && q3Val !== null)
+      ? Number((q4Val - q3Val).toFixed(2))
+      : 0;
+
+    const diffQ1ToQ4Val = (q4Val !== null && q1Val !== null)
+      ? Number((q4Val - q1Val).toFixed(2))
+      : diffQ1ToQ3Val;
+
     const changeQ2ToQ3 = (q3Val !== null && q2Val !== null && q2Val !== 0)
       ? Number(((q3Val - q2Val) / q2Val * 100).toFixed(2))
       : 0;
@@ -184,7 +203,17 @@ export function computeMetricSummaries(records: BodyCompositionRecord[]): Metric
       ? Number(((q3Val - q1Val) / q1Val * 100).toFixed(2))
       : 0;
 
-    const isPositiveImprovement = higherIsBetter ? (diffQ1ToQ3Val >= 0) : (diffQ1ToQ3Val <= 0);
+    const changeQ3ToQ4 = (q4Val !== null && q3Val !== null && q3Val !== 0)
+      ? Number(((q4Val - q3Val) / q3Val * 100).toFixed(2))
+      : 0;
+
+    const changeQ1ToQ4 = (q4Val !== null && q1Val !== null && q1Val !== 0)
+      ? Number(((q4Val - q1Val) / q1Val * 100).toFixed(2))
+      : changeQ1ToQ3;
+
+    // Is progress positive overall? (Q4 vs Q1 or latest vs baseline)
+    const latestDiff = q4Val !== null ? (diffQ1ToQ4Val) : diffQ1ToQ3Val;
+    const isPositiveImprovement = higherIsBetter ? (latestDiff >= 0) : (latestDiff <= 0);
 
     return {
       metricKey: key,
@@ -194,11 +223,16 @@ export function computeMetricSummaries(records: BodyCompositionRecord[]): Metric
       q1Avg: q1Val !== null ? Number(q1Val.toFixed(2)) : null,
       q2Avg: q2Val !== null ? Number(q2Val.toFixed(2)) : null,
       q3Avg: q3Val !== null ? Number(q3Val.toFixed(2)) : null,
+      q4Avg: q4Val !== null ? Number(q4Val.toFixed(2)) : null,
       currentAvg: Number(current.toFixed(2)),
       changeQ2ToQ3,
       changeQ1ToQ3,
+      changeQ3ToQ4,
+      changeQ1ToQ4,
       diffQ1ToQ3Val,
       diffQ2ToQ3Val,
+      diffQ3ToQ4Val,
+      diffQ1ToQ4Val,
       isPositiveImprovement,
       idealRange
     };
@@ -225,7 +259,7 @@ export interface BMIDistributionQuarter {
 }
 
 export function computeBMIDistributionByQuarter(records: BodyCompositionRecord[]): BMIDistributionQuarter[] {
-  const quarters: Quarter[] = ['Q1', 'Q2', 'Q3'];
+  const quarters: Quarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
 
   return quarters.map(q => {
     const qRecords = records.filter(r => r.quarter === q && r.bmi !== null);
@@ -260,9 +294,11 @@ export function computeBMIDistributionByQuarter(records: BodyCompositionRecord[]
 
 export interface QuarterParticipationSummary {
   totalPersons: number;
-  moreThanTwoQuartersCount: number; // > 2 quarters (i.e. exactly 3 quarters)
+  moreThanTwoQuartersCount: number; // > 2 quarters (i.e. 3 or 4 quarters)
   moreThanTwoQuartersPercentage: number;
-  threeQuartersCount: number; // all 3 quarters
+  fourQuartersCount: number; // all 4 quarters
+  fourQuartersPercentage: number;
+  threeQuartersCount: number; // 3 quarters
   threeQuartersPercentage: number;
   twoQuartersCount: number; // exactly 2 quarters
   twoQuartersPercentage: number;
@@ -270,6 +306,7 @@ export interface QuarterParticipationSummary {
   oneQuarterPercentage: number;
   atLeastTwoQuartersCount: number; // >= 2 quarters
   atLeastTwoQuartersPercentage: number;
+  fourQuartersPersonIds: string[];
   threeQuartersPersonIds: string[];
   twoQuartersPersonIds: string[];
   oneQuarterPersonIds: string[];
@@ -308,9 +345,10 @@ export interface BMITransitionAnalysis {
 }
 
 export function computeBMITransitionAnalysis(persons: PersonSummary[]): BMITransitionAnalysis {
-  const quartersOrder: Quarter[] = ['Q1', 'Q2', 'Q3'];
+  const quartersOrder: Quarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
   const qualifiedTransitions: BMITransitionItem[] = [];
 
+  const fourQuartersPersonIds: string[] = [];
   const threeQuartersPersonIds: string[] = [];
   const twoQuartersPersonIds: string[] = [];
   const oneQuarterPersonIds: string[] = [];
@@ -322,7 +360,9 @@ export function computeBMITransitionAnalysis(persons: PersonSummary[]): BMITrans
     );
 
     const qCount = availableQuarters.length;
-    if (qCount >= 3) {
+    if (qCount >= 4) {
+      fourQuartersPersonIds.push(person.person_id);
+    } else if (qCount === 3) {
       threeQuartersPersonIds.push(person.person_id);
     } else if (qCount === 2) {
       twoQuartersPersonIds.push(person.person_id);
@@ -388,16 +428,19 @@ export function computeBMITransitionAnalysis(persons: PersonSummary[]): BMITrans
   });
 
   const totalPersons = persons.length;
+  const fourQuartersCount = fourQuartersPersonIds.length;
   const threeQuartersCount = threeQuartersPersonIds.length;
   const twoQuartersCount = twoQuartersPersonIds.length;
   const oneQuarterCount = oneQuarterPersonIds.length;
-  const atLeastTwoQuartersCount = threeQuartersCount + twoQuartersCount;
-  const moreThanTwoQuartersCount = threeQuartersCount; // > 2 quarters is exactly 3 quarters
+  const atLeastTwoQuartersCount = fourQuartersCount + threeQuartersCount + twoQuartersCount;
+  const moreThanTwoQuartersCount = fourQuartersCount + threeQuartersCount; // > 2 quarters
 
   const quarterParticipation: QuarterParticipationSummary = {
     totalPersons,
     moreThanTwoQuartersCount,
     moreThanTwoQuartersPercentage: totalPersons > 0 ? Number(((moreThanTwoQuartersCount / totalPersons) * 100).toFixed(1)) : 0,
+    fourQuartersCount,
+    fourQuartersPercentage: totalPersons > 0 ? Number(((fourQuartersCount / totalPersons) * 100).toFixed(1)) : 0,
     threeQuartersCount,
     threeQuartersPercentage: totalPersons > 0 ? Number(((threeQuartersCount / totalPersons) * 100).toFixed(1)) : 0,
     twoQuartersCount,
@@ -406,6 +449,7 @@ export function computeBMITransitionAnalysis(persons: PersonSummary[]): BMITrans
     oneQuarterPercentage: totalPersons > 0 ? Number(((oneQuarterCount / totalPersons) * 100).toFixed(1)) : 0,
     atLeastTwoQuartersCount,
     atLeastTwoQuartersPercentage: totalPersons > 0 ? Number(((atLeastTwoQuartersCount / totalPersons) * 100).toFixed(1)) : 0,
+    fourQuartersPersonIds,
     threeQuartersPersonIds,
     twoQuartersPersonIds,
     oneQuarterPersonIds,
@@ -446,8 +490,8 @@ export function computeBMITransitionAnalysis(persons: PersonSummary[]): BMITrans
 }
 
 export function computeLeaderboards(persons: PersonSummary[]) {
-  // Only consider persons who have data in both Q1 (or Q2) and Q3
-  const qualifiedPersons = persons.filter(p => p.quarters.Q3 && (p.quarters.Q1 || p.quarters.Q2));
+  // Only consider persons who have data in both baseline (Q1 or Q2) and latest (Q4 or Q3)
+  const qualifiedPersons = persons.filter(p => (p.quarters.Q4 || p.quarters.Q3) && (p.quarters.Q1 || p.quarters.Q2));
 
   // 1. Top Fat Loss (% Body Fat reduced most)
   const topFatLoss = [...qualifiedPersons]

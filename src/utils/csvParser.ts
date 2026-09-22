@@ -40,20 +40,23 @@ export function convertGoogleSheetsUrlToCsvUrl(inputUrl: string, sheetNameOrGid?
 }
 
 /**
- * Detects Quarter ('Q1' | 'Q2' | 'Q3') from a tab name, filename, or text
+ * Detects Quarter ('Q1' | 'Q2' | 'Q3' | 'Q4') from a tab name, filename, or text
  */
 export function detectQuarterFromName(name: string): Quarter | undefined {
   if (!name) return undefined;
   const n = name.trim().toLowerCase();
 
-  if (n.includes('q1') || n.includes('ไตรมาส 1') || n.includes('ไตรมาส1') || n.includes('รอบ 1') || n.includes('รอบ1') || n.includes('quarter 1') || n.includes('quarter1') || n === '1') {
+  if (n.includes('q1') || n.includes('ไตรมาส 1') || n.includes('ไตรมาส1') || n.includes('รอบที่ 1') || n.includes('รอบที่1') || n.includes('รอบ 1') || n.includes('รอบ1') || n.includes('quarter 1') || n.includes('quarter1') || n === '1') {
     return 'Q1';
   }
-  if (n.includes('q2') || n.includes('ไตรมาส 2') || n.includes('ไตรมาส2') || n.includes('รอบ 2') || n.includes('รอบ2') || n.includes('quarter 2') || n.includes('quarter2') || n === '2') {
+  if (n.includes('q2') || n.includes('ไตรมาส 2') || n.includes('ไตรมาส2') || n.includes('รอบที่ 2') || n.includes('รอบที่2') || n.includes('รอบ 2') || n.includes('รอบ2') || n.includes('quarter 2') || n.includes('quarter2') || n === '2') {
     return 'Q2';
   }
-  if (n.includes('q3') || n.includes('ไตรมาส 3') || n.includes('ไตรมาส3') || n.includes('รอบ 3') || n.includes('รอบ3') || n.includes('quarter 3') || n.includes('quarter3') || n === '3') {
+  if (n.includes('q3') || n.includes('ไตรมาส 3') || n.includes('ไตรมาส3') || n.includes('รอบที่ 3') || n.includes('รอบที่3') || n.includes('รอบ 3') || n.includes('รอบ3') || n.includes('quarter 3') || n.includes('quarter3') || n === '3') {
     return 'Q3';
+  }
+  if (n.includes('q4') || n.includes('ไตรมาส 4') || n.includes('ไตรมาส4') || n.includes('รอบที่ 4') || n.includes('รอบที่4') || n.includes('รอบ 4') || n.includes('รอบ4') || n.includes('quarter 4') || n.includes('quarter4') || n === '4') {
+    return 'Q4';
   }
 
   return undefined;
@@ -141,15 +144,17 @@ export function parseHealthRecordsCsv(csvText: string, fallbackQuarter?: Quarter
     if (!personId || personId === '#N/A' || personId === 'null' || personId.toLowerCase() === 'person_id') continue;
 
     // Quarter extraction
-    let quarter: Quarter = fallbackQuarter || 'Q3';
+    let quarter: Quarter = fallbackQuarter || 'Q4';
     if (idxQuarter !== -1 && parts[idxQuarter]) {
       const qRaw = parts[idxQuarter].toUpperCase().trim();
-      if (qRaw.includes('Q1') || qRaw === '1' || qRaw.includes('ไตรมาส 1') || qRaw.includes('ไตรมาส1')) {
+      if (qRaw.includes('Q1') || qRaw === '1' || qRaw.includes('ไตรมาส 1') || qRaw.includes('ไตรมาส1') || qRaw.includes('รอบ 1') || qRaw.includes('รอบที่ 1')) {
         quarter = 'Q1';
-      } else if (qRaw.includes('Q2') || qRaw === '2' || qRaw.includes('ไตรมาส 2') || qRaw.includes('ไตรมาส2')) {
+      } else if (qRaw.includes('Q2') || qRaw === '2' || qRaw.includes('ไตรมาส 2') || qRaw.includes('ไตรมาส2') || qRaw.includes('รอบ 2') || qRaw.includes('รอบที่ 2')) {
         quarter = 'Q2';
-      } else if (qRaw.includes('Q3') || qRaw === '3' || qRaw.includes('ไตรมาส 3') || qRaw.includes('ไตรมาส3')) {
+      } else if (qRaw.includes('Q3') || qRaw === '3' || qRaw.includes('ไตรมาส 3') || qRaw.includes('ไตรมาส3') || qRaw.includes('รอบ 3') || qRaw.includes('รอบที่ 3')) {
         quarter = 'Q3';
+      } else if (qRaw.includes('Q4') || qRaw === '4' || qRaw.includes('ไตรมาส 4') || qRaw.includes('ไตรมาส4') || qRaw.includes('รอบ 4') || qRaw.includes('รอบที่ 4')) {
+        quarter = 'Q4';
       }
     }
 
@@ -213,7 +218,7 @@ export function parseHealthRecordsCsv(csvText: string, fallbackQuarter?: Quarter
 export interface MultiSheetFetchResult {
   records: BodyCompositionRecord[];
   fetchedTabs: string[];
-  quarterCounts: { Q1: number; Q2: number; Q3: number };
+  quarterCounts: { Q1: number; Q2: number; Q3: number; Q4: number };
   errors: string[];
 }
 
@@ -231,7 +236,7 @@ export async function fetchAllSheetsFromSpreadsheet(
   const result: MultiSheetFetchResult = {
     records: [],
     fetchedTabs: [],
-    quarterCounts: { Q1: 0, Q2: 0, Q3: 0 },
+    quarterCounts: { Q1: 0, Q2: 0, Q3: 0, Q4: 0 },
     errors: [],
   };
 
@@ -267,7 +272,7 @@ export async function fetchAllSheetsFromSpreadsheet(
       result.errors.push(`Apps Script fetch failed: ${err.message}`);
     }
   } else if (spreadsheetId) {
-    // Case 2: Direct Google Spreadsheet with multiple tabs (Q1, Q2, Q3, etc.)
+    // Case 2: Direct Google Spreadsheet with multiple tabs (Q1, Q2, Q3, Q4, etc.)
     // Build list of sheet tab candidates
     let tabCandidates: string[] = [];
 
@@ -276,13 +281,14 @@ export async function fetchAllSheetsFromSpreadsheet(
     } else {
       // Common standard tab names in Thai and English
       tabCandidates = [
-        'Q1', 'Q2', 'Q3',
-        'ไตรมาส 1', 'ไตรมาส 2', 'ไตรมาส 3',
-        'ไตรมาส1', 'ไตรมาส2', 'ไตรมาส3',
-        'Quarter 1', 'Quarter 2', 'Quarter 3',
-        'Quarter1', 'Quarter2', 'Quarter3',
-        'Sheet1', 'Sheet2', 'Sheet3',
-        'รอบที่ 1', 'รอบที่ 2', 'รอบที่ 3',
+        'Q1', 'Q2', 'Q3', 'Q4',
+        'ไตรมาส 1', 'ไตรมาส 2', 'ไตรมาส 3', 'ไตรมาส 4',
+        'ไตรมาส1', 'ไตรมาส2', 'ไตรมาส3', 'ไตรมาส4',
+        'Quarter 1', 'Quarter 2', 'Quarter 3', 'Quarter 4',
+        'Quarter1', 'Quarter2', 'Quarter3', 'Quarter4',
+        'Sheet1', 'Sheet2', 'Sheet3', 'Sheet4',
+        'รอบที่ 1', 'รอบที่ 2', 'รอบที่ 3', 'รอบที่ 4',
+        'รอบ 1', 'รอบ 2', 'รอบ 3', 'รอบ 4',
       ];
     }
 
@@ -322,7 +328,7 @@ export async function fetchAllSheetsFromSpreadsheet(
       }
     });
 
-    // If still no records or missing quarters, fallback to direct gid exports (gid=0, gid=1, gid=2)
+    // If still no records or missing quarters, fallback to direct gid exports (gid=0, gid=1, gid=2, gid=3)
     if (recordMap.size === 0) {
       onProgress?.('กำลังลองดึงผ่าน Sheet GID (แท็บเริ่มต้น)...');
       const gidList = ['0', '1', '2', '3', '4'];
@@ -333,7 +339,7 @@ export async function fetchAllSheetsFromSpreadsheet(
           if (res.ok) {
             const text = await res.text();
             if (text && !text.startsWith('<!DOCTYPE')) {
-              const defaultQ: Quarter = gid === '0' ? 'Q1' : gid === '1' ? 'Q2' : gid === '2' ? 'Q3' : 'Q3';
+              const defaultQ: Quarter = gid === '0' ? 'Q1' : gid === '1' ? 'Q2' : gid === '2' ? 'Q3' : gid === '3' ? 'Q4' : 'Q4';
               const parsed = parseHealthRecordsCsv(text, defaultQ);
               if (parsed.length > 0) {
                 addRecords(parsed, `gid=${gid}`);
@@ -353,6 +359,7 @@ export async function fetchAllSheetsFromSpreadsheet(
     if (r.quarter === 'Q1') result.quarterCounts.Q1++;
     else if (r.quarter === 'Q2') result.quarterCounts.Q2++;
     else if (r.quarter === 'Q3') result.quarterCounts.Q3++;
+    else if (r.quarter === 'Q4') result.quarterCounts.Q4++;
   });
 
   return result;

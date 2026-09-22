@@ -59,7 +59,7 @@ interface WellnessNoteItem {
 }
 
 export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackToOverview }) => {
-  const quarters: Quarter[] = ['Q1', 'Q2', 'Q3'];
+  const quarters: Quarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
 
   // Table rows for all 5 metrics plus weight & height
   const metricsConfig = [
@@ -75,7 +75,7 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
   const chartData = quarters.map((q) => {
     const rec = person.quarters[q];
     return {
-      quarter: q === 'Q3' ? 'Q3 (ล่าสุด)' : q,
+      quarter: q === 'Q4' ? 'Q4 (ล่าสุด)' : q,
       muscle_mass: rec?.muscle_mass ?? null,
       bmi: rec?.bmi ?? null,
       body_fat_percentage: rec?.body_fat_percentage ?? null,
@@ -89,7 +89,7 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
   const { user, signInWithGoogle } = useAuth();
   const [notes, setNotes] = useState<WellnessNoteItem[]>([]);
   const [newNote, setNewNote] = useState('');
-  const [targetQuarter, setTargetQuarter] = useState<string>('Q3');
+  const [targetQuarter, setTargetQuarter] = useState<string>('Q4');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -147,16 +147,17 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
     }
   };
 
-  // Radar comparison Q1 vs Q3
+  // Radar comparison Q1 vs Q4 (or latest available)
   const q1Rec = person.quarters.Q1 || person.quarters.Q2;
-  const q3Rec = person.quarters.Q3;
+  const qLatestRec = person.quarters.Q4 || person.quarters.Q3;
+  const latestLabel = person.quarters.Q4 ? 'Q4 (ล่าสุด)' : 'Q3 (ล่าสุด)';
 
   const radarData = [
-    { subject: 'มวลกล้ามเนื้อ', Q1: q1Rec?.muscle_mass ?? 20, Q3: q3Rec?.muscle_mass ?? 20, fullMark: 40 },
-    { subject: '% ไขมัน', Q1: q1Rec?.body_fat_percentage ?? 30, Q3: q3Rec?.body_fat_percentage ?? 30, fullMark: 50 },
-    { subject: 'ไขมันช่องท้อง (x2)', Q1: (q1Rec?.visceral_fat ?? 6) * 2, Q3: (q3Rec?.visceral_fat ?? 6) * 2, fullMark: 30 },
-    { subject: 'BMI', Q1: q1Rec?.bmi ?? 24, Q3: q3Rec?.bmi ?? 24, fullMark: 35 },
-    { subject: 'มวลไขมัน', Q1: q1Rec?.fat_mass ?? 20, Q3: q3Rec?.fat_mass ?? 20, fullMark: 40 },
+    { subject: 'มวลกล้ามเนื้อ', Q1: q1Rec?.muscle_mass ?? 20, QLatest: qLatestRec?.muscle_mass ?? 20, fullMark: 40 },
+    { subject: '% ไขมัน', Q1: q1Rec?.body_fat_percentage ?? 30, QLatest: qLatestRec?.body_fat_percentage ?? 30, fullMark: 50 },
+    { subject: 'ไขมันช่องท้อง (x2)', Q1: (q1Rec?.visceral_fat ?? 6) * 2, QLatest: (qLatestRec?.visceral_fat ?? 6) * 2, fullMark: 30 },
+    { subject: 'BMI', Q1: q1Rec?.bmi ?? 24, QLatest: qLatestRec?.bmi ?? 24, fullMark: 35 },
+    { subject: 'มวลไขมัน', Q1: q1Rec?.fat_mass ?? 20, QLatest: qLatestRec?.fat_mass ?? 20, fullMark: 40 },
   ];
 
   const handlePrint = () => {
@@ -218,13 +219,13 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
         </div>
       </div>
 
-      {/* 3-Quarter Body Composition Matrix Table with explicit #N/A and % difference */}
+      {/* 4-Quarter Body Composition Matrix Table with explicit #N/A and % difference */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-600" />
-              ตารางเปรียบเทียบผลการวัดมวลร่างกาย 3 ไตรมาส (Body Composition Matrix)
+              ตารางเปรียบเทียบผลการวัดมวลร่างกาย 4 ไตรมาส (Body Composition Matrix: Q1 - Q4)
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               * ข้อมูลที่ขาดหายไปหรือไม่ได้เข้าตรวจในรอบนั้นจะแสดงสถานะเป็น <strong>#N/A</strong> พร้อมผลการเปลี่ยนแปลงสัมบูรณ์และคิดเป็นเปอร์เซ็นต์ (%)
@@ -239,13 +240,14 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
           <table className="w-full text-left text-xs sm:text-sm">
             <thead className="bg-slate-50 text-slate-700 font-semibold text-[10px] uppercase tracking-wider">
               <tr>
-                <th className="py-2.5 px-4">ตัวชี้วัด (Metrics)</th>
-                <th className="py-2.5 px-4 text-center">Q1 (ไตรมาส 1)</th>
-                <th className="py-2.5 px-4 text-center">Q2 (ไตรมาส 2)</th>
-                <th className="py-2.5 px-4 text-center bg-blue-50 text-blue-900">Q3 (ไตรมาส 3 ล่าสุด)</th>
-                <th className="py-2.5 px-4 text-center">การเปลี่ยนแปลง (Q3 vs Q1)</th>
-                <th className="py-2.5 px-4 text-center bg-emerald-50/60 text-emerald-900">% เปลี่ยนแปลง</th>
-                <th className="py-2.5 px-4 text-center">เกณฑ์มาตรฐานสากล</th>
+                <th className="py-2.5 px-3">ตัวชี้วัด (Metrics)</th>
+                <th className="py-2.5 px-3 text-center">Q1</th>
+                <th className="py-2.5 px-3 text-center">Q2</th>
+                <th className="py-2.5 px-3 text-center">Q3</th>
+                <th className="py-2.5 px-3 text-center bg-blue-50 text-blue-900">Q4 (ล่าสุด)</th>
+                <th className="py-2.5 px-3 text-center">การเปลี่ยนแปลง (Q4 vs Q1)</th>
+                <th className="py-2.5 px-3 text-center bg-emerald-50/60 text-emerald-900">% เปลี่ยนแปลง</th>
+                <th className="py-2.5 px-3 text-center">เกณฑ์มาตรฐานสากล</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -253,10 +255,12 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
                 const q1Val = person.quarters.Q1?.[cfg.key as keyof BodyCompositionRecord] as number | null;
                 const q2Val = person.quarters.Q2?.[cfg.key as keyof BodyCompositionRecord] as number | null;
                 const q3Val = person.quarters.Q3?.[cfg.key as keyof BodyCompositionRecord] as number | null;
+                const q4Val = person.quarters.Q4?.[cfg.key as keyof BodyCompositionRecord] as number | null;
 
                 const startVal = q1Val ?? q2Val;
-                const diff = (q3Val !== null && startVal !== null && q3Val !== undefined && startVal !== undefined)
-                  ? Number((q3Val - startVal).toFixed(2))
+                const endVal = q4Val ?? q3Val;
+                const diff = (endVal !== null && startVal !== null && endVal !== undefined && startVal !== undefined)
+                  ? Number((endVal - startVal).toFixed(2))
                   : null;
                 
                 const pctDiff = (diff !== null && startVal !== null && startVal > 0)
@@ -268,17 +272,20 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
 
                 return (
                   <tr key={cfg.key} className="hover:bg-slate-50/50">
-                    <td className="py-2.5 px-4 font-semibold text-slate-900">{cfg.labelTh}</td>
-                    <td className="py-2.5 px-4 text-center font-mono font-medium text-slate-700">
+                    <td className="py-2.5 px-3 font-semibold text-slate-900">{cfg.labelTh}</td>
+                    <td className="py-2.5 px-3 text-center font-mono font-medium text-slate-700">
                       {q1Val !== null && q1Val !== undefined ? `${q1Val} ${cfg.unit}` : <span className="text-slate-400 font-bold bg-slate-100 px-1.5 py-0.5 rounded">#N/A</span>}
                     </td>
-                    <td className="py-2.5 px-4 text-center font-mono font-medium text-slate-700">
+                    <td className="py-2.5 px-3 text-center font-mono font-medium text-slate-700">
                       {q2Val !== null && q2Val !== undefined ? `${q2Val} ${cfg.unit}` : <span className="text-slate-400 font-bold bg-slate-100 px-1.5 py-0.5 rounded">#N/A</span>}
                     </td>
-                    <td className="py-2.5 px-4 text-center font-mono font-bold bg-blue-50/50 text-blue-950">
+                    <td className="py-2.5 px-3 text-center font-mono font-medium text-slate-700">
                       {q3Val !== null && q3Val !== undefined ? `${q3Val} ${cfg.unit}` : <span className="text-slate-400 font-bold bg-slate-100 px-1.5 py-0.5 rounded">#N/A</span>}
                     </td>
-                    <td className="py-2.5 px-4 text-center font-mono">
+                    <td className="py-2.5 px-3 text-center font-mono font-bold bg-blue-50/50 text-blue-950">
+                      {q4Val !== null && q4Val !== undefined ? `${q4Val} ${cfg.unit}` : <span className="text-slate-400 font-bold bg-slate-100 px-1.5 py-0.5 rounded">#N/A</span>}
+                    </td>
+                    <td className="py-2.5 px-3 text-center font-mono">
                       {diff !== null ? (
                         <span
                           className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-bold ${
@@ -294,7 +301,7 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
                         <span className="text-slate-400 font-bold">#N/A</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-4 text-center font-mono font-bold">
+                    <td className="py-2.5 px-3 text-center font-mono font-bold">
                       {pctDiff !== null ? (
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded text-xs ${
@@ -307,7 +314,7 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
                         <span className="text-slate-400 font-bold">#N/A</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-4 text-center text-xs text-slate-500">{cfg.ideal}</td>
+                    <td className="py-2.5 px-3 text-center text-xs text-slate-500">{cfg.ideal}</td>
                   </tr>
                 );
               })}
@@ -325,7 +332,7 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
               เส้นทางการเปลี่ยนแปลงส่วนบุคคล (Personal Trend Line)
             </h3>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-              Line Chart (Q1 - Q3)
+              Line Chart (Q1 - Q4)
             </span>
           </div>
           <p className="text-xs text-slate-500 mb-4">
@@ -359,7 +366,7 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
             </span>
           </div>
           <p className="text-xs text-slate-500 mb-2">
-            เปรียบเทียบจุดเริ่มต้น (Q1) กับผลการประเมินล่าสุด (Q3)
+            เปรียบเทียบจุดเริ่มต้น (Q1) กับผลการประเมินล่าสุด ({latestLabel})
           </p>
 
           <div className="h-64 w-full">
@@ -369,7 +376,7 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
                 <PolarAngleAxis dataKey="subject" stroke="#475569" fontSize={11} />
                 <PolarRadiusAxis angle={30} domain={[0, 45]} stroke="#94a3b8" fontSize={10} />
                 <Radar name="Q1 (เริ่มต้น)" dataKey="Q1" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.2} />
-                <Radar name="Q3 (ล่าสุด)" dataKey="Q3" stroke="#2563eb" fill="#2563eb" fillOpacity={0.35} />
+                <Radar name={latestLabel} dataKey="QLatest" stroke="#2563eb" fill="#2563eb" fillOpacity={0.35} />
                 <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
                 <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11px' }} />
               </RadarChart>
@@ -443,7 +450,8 @@ export const IndividualView: React.FC<IndividualViewProps> = ({ person, onBackTo
                 >
                   <option value="Q1">สำหรับ Q1</option>
                   <option value="Q2">สำหรับ Q2</option>
-                  <option value="Q3">สำหรับ Q3 (ล่าสุด)</option>
+                  <option value="Q3">สำหรับ Q3</option>
+                  <option value="Q4">สำหรับ Q4 (ล่าสุด)</option>
                 </select>
                 <input
                   type="text"

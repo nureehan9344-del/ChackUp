@@ -48,7 +48,7 @@ export const DataSourceBanner: React.FC<DataSourceBannerProps> = ({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-bold text-xs sm:text-sm text-slate-900">
-                {isCustom ? '📊 กำลังใช้งาน: ข้อมูลจาก Google Sheet / CSV ของคุณ' : '🏢 กำลังใช้งาน: ชุดข้อมูลมาตรฐานองค์กร 3 ไตรมาส'}
+                {isCustom ? '📊 กำลังใช้งาน: ข้อมูลจาก Google Sheet / CSV ของคุณ' : '🏢 กำลังใช้งาน: ชุดข้อมูลมาตรฐานองค์กร 4 ไตรมาส (Q1-Q4)'}
               </span>
               <span
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${

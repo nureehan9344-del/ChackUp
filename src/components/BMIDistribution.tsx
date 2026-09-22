@@ -48,13 +48,19 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
 }) => {
   const distributionData = computeBMIDistributionByQuarter(records);
   const transitionAnalysis = computeBMITransitionAnalysis(persons);
-  const [transitionTab, setTransitionTab] = useState<'all_changed' | 'improved' | 'worsened' | 'three_quarters' | 'two_quarters'>('all_changed');
+  const [transitionTab, setTransitionTab] = useState<'all_changed' | 'improved' | 'worsened' | 'four_quarters' | 'more_than_two' | 'two_quarters'>('all_changed');
   const [selectedDistQuarter, setSelectedDistQuarter] = useState<'ALL' | Quarter>('ALL');
 
   // Distribution for currently selected quarter tab
+  const q4Dist = distributionData.find((d) => d.quarter === 'Q4') || distributionData[3] || distributionData[2];
+  const q1Dist = distributionData[0];
+  const q2Dist = distributionData[1];
+  const q3Dist = distributionData[2];
+  const latestDist = (q4Dist && q4Dist.total > 0) ? q4Dist : q3Dist;
+
   const currentDist = selectedDistQuarter === 'ALL'
-    ? (distributionData.find((d) => d.quarter === activeQuarter) || distributionData[2])
-    : (distributionData.find((d) => d.quarter === selectedDistQuarter) || distributionData[2]);
+    ? (distributionData.find((d) => d.quarter === activeQuarter) || latestDist)
+    : (distributionData.find((d) => d.quarter === selectedDistQuarter) || latestDist);
 
   const pieData = [
     { name: 'ลูกค้ารายย่อย (< 18.5)', value: currentDist['ลูกค้ารายย่อย'], color: '#3b82f6', description: 'น้ำหนักน้อยกว่าเกณฑ์' },
@@ -62,13 +68,9 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
     { name: 'ลูกค้ารายใหญ่ (> 23)', value: currentDist['ลูกค้ารายใหญ่'], color: '#ef4444', description: 'น้ำหนักเกิน / เสี่ยงโรคอ้วน' },
   ];
 
-  // Calculate change between Q1 and Q3
-  const q1Dist = distributionData[0];
-  const q2Dist = distributionData[1];
-  const q3Dist = distributionData[2];
-
-  const generalGrowth = q3Dist && q1Dist ? q3Dist['ลูกค้าทั่วไป'] - q1Dist['ลูกค้าทั่วไป'] : 0;
-  const largeClientReduction = q3Dist && q1Dist ? q1Dist['ลูกค้ารายใหญ่'] - q3Dist['ลูกค้ารายใหญ่'] : 0;
+  // Calculate change between Q1 and Q4 (or latest)
+  const generalGrowth = latestDist && q1Dist ? latestDist['ลูกค้าทั่วไป'] - q1Dist['ลูกค้าทั่วไป'] : 0;
+  const largeClientReduction = latestDist && q1Dist ? q1Dist['ลูกค้ารายใหญ่'] - latestDist['ลูกค้ารายใหญ่'] : 0;
 
   // Filtered transition / participation items to display
   const displayedTransitions = transitionTab === 'all_changed'
@@ -77,7 +79,9 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
     ? transitionAnalysis.improvedTransitions
     : transitionTab === 'worsened'
     ? transitionAnalysis.worsenedTransitions
-    : transitionTab === 'three_quarters'
+    : transitionTab === 'four_quarters'
+    ? transitionAnalysis.transitions.filter(t => t.totalQuartersCount >= 4)
+    : transitionTab === 'more_than_two'
     ? transitionAnalysis.transitions.filter(t => t.totalQuartersCount >= 3)
     : transitionAnalysis.transitions.filter(t => t.totalQuartersCount === 2);
 
@@ -129,23 +133,24 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
                 ความต่อเนื่องของการตรวจ &amp; อัตราการเปลี่ยนกลุ่ม BMI
               </h3>
               <span className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-500/30 text-emerald-200 font-semibold border border-emerald-400/30">
-                ประเมินจากผลตรวจ 3 ไตรมาส
+                ประเมินจากผลตรวจ 4 ไตรมาส (Q1 - Q4)
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1">
-              บุคลากรทั้งหมด <strong>{quarterParticipation.totalPersons} ท่าน</strong> | มีผู้เข้ารับการตรวจมากกว่า 2 ไตรมาส (ครบทั้ง 3 ไตรมาส) จำนวน{' '}
+              บุคลากรทั้งหมด <strong>{quarterParticipation.totalPersons} ท่าน</strong> | ตรวจครบทั้ง 4 ไตรมาสจำนวน{' '}
               <strong className="text-emerald-300 font-bold underline underline-offset-2">
-                {quarterParticipation.moreThanTwoQuartersCount} ท่าน ({quarterParticipation.moreThanTwoQuartersPercentage}%)
+                {quarterParticipation.fourQuartersCount} ท่าน ({quarterParticipation.fourQuartersPercentage}%)
               </strong>
+              {' '}| มีข้อมูลมากกว่า 2 ไตรมาส ({quarterParticipation.moreThanTwoQuartersCount} ท่าน, {quarterParticipation.moreThanTwoQuartersPercentage}%)
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 text-right">
-              <div className="text-[10px] uppercase text-emerald-300 font-bold">มีข้อมูล &gt; 2 ไตรมาส (ครบ 3 Q)</div>
+              <div className="text-[10px] uppercase text-emerald-300 font-bold">มีข้อมูลครบ 4 ไตรมาส</div>
               <div className="text-2xl font-extrabold text-emerald-300">
-                {quarterParticipation.moreThanTwoQuartersCount}{' '}
-                <span className="text-xs font-normal text-slate-300">({quarterParticipation.moreThanTwoQuartersPercentage}%)</span>
+                {quarterParticipation.fourQuartersCount}{' '}
+                <span className="text-xs font-normal text-slate-300">({quarterParticipation.fourQuartersPercentage}%)</span>
               </div>
             </div>
           </div>
@@ -153,25 +158,25 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
 
         {/* 4 Stat Cards: Participation & Transition */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-          {/* Card 1: Data Continuity > 2 Quarters */}
+          {/* Card 1: Data Continuity 4 Quarters */}
           <div className="bg-emerald-950/60 border border-emerald-500/40 rounded-xl p-3.5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-emerald-200 font-medium flex items-center gap-1.5">
                   <CalendarCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  1. มีข้อมูล &gt; 2 ไตรมาส (ครบ 3 Q)
+                  1. ตรวจครบทั้ง 4 ไตรมาส
                 </span>
                 <span className="text-xs font-bold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/40">
-                  {quarterParticipation.moreThanTwoQuartersPercentage}%
+                  {quarterParticipation.fourQuartersPercentage}%
                 </span>
               </div>
               <div className="text-2xl font-bold text-white">
-                {quarterParticipation.moreThanTwoQuartersCount}{' '}
+                {quarterParticipation.fourQuartersCount}{' '}
                 <span className="text-xs font-normal text-slate-300">จาก {quarterParticipation.totalPersons} ท่าน</span>
               </div>
             </div>
             <p className="text-[11px] text-emerald-200/80 mt-2 pt-2 border-t border-emerald-800/40">
-              ตรวจต่อเนื่องครบทั้ง Q1, Q2, Q3 (ข้อมูลสมบูรณ์สูงสุด)
+              ตรวจต่อเนื่องครบทั้ง Q1, Q2, Q3, Q4 (ข้อมูลสมบูรณ์สูงสุด)
             </p>
           </div>
 
@@ -189,7 +194,7 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
               </div>
               <div className="text-2xl font-bold text-white">
                 {quarterParticipation.atLeastTwoQuartersCount}{' '}
-                <span className="text-xs font-normal text-slate-300">ท่าน (2Q = {quarterParticipation.twoQuartersCount} ท่าน)</span>
+                <span className="text-xs font-normal text-slate-300">ท่าน (&gt;2Q = {quarterParticipation.moreThanTwoQuartersCount} ท่าน)</span>
               </div>
             </div>
             <p className="text-[11px] text-slate-400 mt-2 pt-2 border-t border-white/10">
@@ -277,12 +282,20 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
                 ควรเฝ้าระวัง ({transitionAnalysis.worsenedCount})
               </button>
               <button
-                onClick={() => setTransitionTab('three_quarters')}
+                onClick={() => setTransitionTab('four_quarters')}
                 className={`px-2.5 py-1 rounded font-medium transition-all ${
-                  transitionTab === 'three_quarters' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:text-white'
+                  transitionTab === 'four_quarters' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300 hover:text-white'
                 }`}
               >
-                มีข้อมูล &gt; 2 ไตรมาส (ครบ 3 Q) ({quarterParticipation.moreThanTwoQuartersCount})
+                ครบ 4 ไตรมาส ({quarterParticipation.fourQuartersCount})
+              </button>
+              <button
+                onClick={() => setTransitionTab('more_than_two')}
+                className={`px-2.5 py-1 rounded font-medium transition-all ${
+                  transitionTab === 'more_than_two' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                มีข้อมูล &gt; 2 ไตรมาส ({quarterParticipation.moreThanTwoQuartersCount})
               </button>
             </div>
           </div>
@@ -350,10 +363,10 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
               <div>
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                   <Users className="h-4 w-4 text-blue-600" />
-                  การเคลื่อนย้ายกลุ่มบุคลากรตามไตรมาส (Quarterly BMI Transition)
+                  การเคลื่อนย้ายกลุ่มบุคลากรตามไตรมาส (Quarterly BMI Transition: Q1 - Q4)
                 </h3>
                 <p className="text-xs text-slate-500">
-                  เปรียบเทียบจำนวนและสัดส่วนบุคลากรในแต่ละกลุ่มตั้งแต่ Q1, Q2 ถึง Q3
+                  เปรียบเทียบจำนวนและสัดส่วนบุคลากรในแต่ละกลุ่มตั้งแต่ Q1, Q2, Q3 ถึง Q4
                 </p>
               </div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-1 rounded">
@@ -386,7 +399,7 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
               <div>
                 <span className="font-bold text-emerald-900">กลุ่มลูกค้าทั่วไป (สมส่วน) เพิ่มขึ้น:</span>
                 <p className="text-emerald-700 mt-0.5">
-                  เพิ่มขึ้น +{generalGrowth} ท่านจาก Q1 สู่ Q3 สะท้อนผลลัพธ์เชิงบวกขององค์กร
+                  เพิ่มขึ้น +{generalGrowth} ท่านจาก Q1 สู่ {q4Dist && q4Dist.total > 0 ? 'Q4' : 'Q3'} สะท้อนผลลัพธ์เชิงบวกขององค์กร
                 </p>
               </div>
             </div>
@@ -414,7 +427,7 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
                   BMI Segment Distribution (ครบทุก Q)
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  สัดส่วนและเปอร์เซ็นต์บุคลากรจำแนกครบทุกไตรมาส
+                  สัดส่วนและเปอร์เซ็นต์บุคลากรจำแนกครบทุกไตรมาส (Q1 - Q4)
                 </p>
               </div>
 
@@ -459,6 +472,16 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
                   }`}
                 >
                   Q3
+                </button>
+                <button
+                  onClick={() => setSelectedDistQuarter('Q4')}
+                  className={`px-2 py-1 rounded font-semibold transition-all ${
+                    selectedDistQuarter === 'Q4'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Q4
                 </button>
               </div>
             </div>
@@ -534,10 +557,11 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
                     <thead className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
                       <tr>
                         <th className="py-2 px-2.5">กลุ่ม BMI</th>
-                        <th className="py-2 px-2 text-center text-blue-800">Q1</th>
-                        <th className="py-2 px-2 text-center text-blue-800">Q2</th>
-                        <th className="py-2 px-2 text-center text-blue-800">Q3</th>
-                        <th className="py-2 px-2.5 text-right">แนวโน้ม (Q1➔Q3)</th>
+                        <th className="py-2 px-1.5 text-center text-blue-800">Q1</th>
+                        <th className="py-2 px-1.5 text-center text-blue-800">Q2</th>
+                        <th className="py-2 px-1.5 text-center text-blue-800">Q3</th>
+                        <th className="py-2 px-1.5 text-center text-blue-800">Q4</th>
+                        <th className="py-2 px-2 text-right">แนวโน้ม (Q1➔Q4)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-mono">
@@ -546,11 +570,12 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
                           <span className="w-2 h-2 rounded-full bg-blue-500" />
                           ลูกค้ารายย่อย (&lt;18.5)
                         </td>
-                        <td className="py-2 px-2 text-center">{q1Dist['ลูกค้ารายย่อย']} ({q1Dist.ลูกค้ารายย่อยPct}%)</td>
-                        <td className="py-2 px-2 text-center">{q2Dist['ลูกค้ารายย่อย']} ({q2Dist.ลูกค้ารายย่อยPct}%)</td>
-                        <td className="py-2 px-2 text-center font-bold">{q3Dist['ลูกค้ารายย่อย']} ({q3Dist.ลูกค้ารายย่อยPct}%)</td>
-                        <td className="py-2 px-2.5 text-right font-sans text-[11px] text-slate-600">
-                          {q3Dist['ลูกค้ารายย่อย'] - q1Dist['ลูกค้ารายย่อย'] > 0 ? `+${q3Dist['ลูกค้ารายย่อย'] - q1Dist['ลูกค้ารายย่อย']}` : q3Dist['ลูกค้ารายย่อย'] - q1Dist['ลูกค้ารายย่อย']} คน
+                        <td className="py-2 px-1.5 text-center">{q1Dist['ลูกค้ารายย่อย']} ({q1Dist.ลูกค้ารายย่อยPct}%)</td>
+                        <td className="py-2 px-1.5 text-center">{q2Dist['ลูกค้ารายย่อย']} ({q2Dist.ลูกค้ารายย่อยPct}%)</td>
+                        <td className="py-2 px-1.5 text-center">{q3Dist['ลูกค้ารายย่อย']} ({q3Dist.ลูกค้ารายย่อยPct}%)</td>
+                        <td className="py-2 px-1.5 text-center font-bold">{q4Dist ? `${q4Dist['ลูกค้ารายย่อย']} (${q4Dist.ลูกค้ารายย่อยPct}%)` : '-'}</td>
+                        <td className="py-2 px-2 text-right font-sans text-[11px] text-slate-600">
+                          {latestDist['ลูกค้ารายย่อย'] - q1Dist['ลูกค้ารายย่อย'] > 0 ? `+${latestDist['ลูกค้ารายย่อย'] - q1Dist['ลูกค้ารายย่อย']}` : latestDist['ลูกค้ารายย่อย'] - q1Dist['ลูกค้ารายย่อย']} คน
                         </td>
                       </tr>
                       <tr className="bg-emerald-50/50">
@@ -558,10 +583,11 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           ลูกค้าทั่วไป (18.5-22.9)
                         </td>
-                        <td className="py-2 px-2 text-center">{q1Dist['ลูกค้าทั่วไป']} ({q1Dist.ลูกค้าทั่วไปPct}%)</td>
-                        <td className="py-2 px-2 text-center">{q2Dist['ลูกค้าทั่วไป']} ({q2Dist.ลูกค้าทั่วไปPct}%)</td>
-                        <td className="py-2 px-2 text-center font-bold text-emerald-700">{q3Dist['ลูกค้าทั่วไป']} ({q3Dist.ลูกค้าทั่วไปPct}%)</td>
-                        <td className="py-2 px-2.5 text-right font-sans text-[11px] font-bold text-emerald-700">
+                        <td className="py-2 px-1.5 text-center">{q1Dist['ลูกค้าทั่วไป']} ({q1Dist.ลูกค้าทั่วไปPct}%)</td>
+                        <td className="py-2 px-1.5 text-center">{q2Dist['ลูกค้าทั่วไป']} ({q2Dist.ลูกค้าทั่วไปPct}%)</td>
+                        <td className="py-2 px-1.5 text-center">{q3Dist['ลูกค้าทั่วไป']} ({q3Dist.ลูกค้าทั่วไปPct}%)</td>
+                        <td className="py-2 px-1.5 text-center font-bold text-emerald-700">{q4Dist ? `${q4Dist['ลูกค้าทั่วไป']} (${q4Dist.ลูกค้าทั่วไปPct}%)` : '-'}</td>
+                        <td className="py-2 px-2 text-right font-sans text-[11px] font-bold text-emerald-700">
                           +{generalGrowth} คน (เพิ่มขึ้น)
                         </td>
                       </tr>
@@ -570,19 +596,21 @@ export const BMIDistribution: React.FC<BMIDistributionProps> = ({
                           <span className="w-2 h-2 rounded-full bg-rose-500" />
                           ลูกค้ารายใหญ่ (&gt;23)
                         </td>
-                        <td className="py-2 px-2 text-center">{q1Dist['ลูกค้ารายใหญ่']} ({q1Dist.ลูกค้ารายใหญ่Pct}%)</td>
-                        <td className="py-2 px-2 text-center">{q2Dist['ลูกค้ารายใหญ่']} ({q2Dist.ลูกค้ารายใหญ่Pct}%)</td>
-                        <td className="py-2 px-2 text-center font-bold">{q3Dist['ลูกค้ารายใหญ่']} ({q3Dist.ลูกค้ารายใหญ่Pct}%)</td>
-                        <td className="py-2 px-2.5 text-right font-sans text-[11px] font-bold text-blue-700">
+                        <td className="py-2 px-1.5 text-center">{q1Dist['ลูกค้ารายใหญ่']} ({q1Dist.ลูกค้ารายใหญ่Pct}%)</td>
+                        <td className="py-2 px-1.5 text-center">{q2Dist['ลูกค้ารายใหญ่']} ({q2Dist.ลูกค้ารายใหญ่Pct}%)</td>
+                        <td className="py-2 px-1.5 text-center">{q3Dist['ลูกค้ารายใหญ่']} ({q3Dist.ลูกค้ารายใหญ่Pct}%)</td>
+                        <td className="py-2 px-1.5 text-center font-bold">{q4Dist ? `${q4Dist['ลูกค้ารายใหญ่']} (${q4Dist.ลูกค้ารายใหญ่Pct}%)` : '-'}</td>
+                        <td className="py-2 px-2 text-right font-sans text-[11px] font-bold text-blue-700">
                           -{largeClientReduction} คน (ลดลง)
                         </td>
                       </tr>
                       <tr className="bg-slate-100/70 font-semibold">
                         <td className="py-2 px-2.5 font-sans text-slate-800">ผู้เข้ารับการตรวจรวม</td>
-                        <td className="py-2 px-2 text-center text-slate-800">{q1Dist.total} คน</td>
-                        <td className="py-2 px-2 text-center text-slate-800">{q2Dist.total} คน</td>
-                        <td className="py-2 px-2 text-center text-slate-900 font-bold">{q3Dist.total} คน</td>
-                        <td className="py-2 px-2.5 text-right font-sans text-slate-600">100%</td>
+                        <td className="py-2 px-1.5 text-center text-slate-800">{q1Dist.total} คน</td>
+                        <td className="py-2 px-1.5 text-center text-slate-800">{q2Dist.total} คน</td>
+                        <td className="py-2 px-1.5 text-center text-slate-800">{q3Dist.total} คน</td>
+                        <td className="py-2 px-1.5 text-center text-slate-900 font-bold">{q4Dist?.total ?? 0} คน</td>
+                        <td className="py-2 px-2 text-right font-sans text-slate-600">100%</td>
                       </tr>
                     </tbody>
                   </table>

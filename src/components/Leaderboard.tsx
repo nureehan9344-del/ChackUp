@@ -37,7 +37,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ persons, onSelectPerso
               Individual Leaderboard : กระดานเกียรติยศบุคลากรพัฒนาการดีเด่น
             </h2>
             <span className="text-[10px] px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-bold uppercase tracking-wider border border-amber-200">
-              3 ไตรมาส (Q1 → Q3)
+              4 ไตรมาส (Q1 → Q4)
             </span>
             <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-bold uppercase tracking-wider border border-emerald-200 flex items-center gap-1">
               <Percent className="w-2.5 h-2.5" />
@@ -97,7 +97,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ persons, onSelectPerso
                 <th className="py-2.5 px-4">บุคลากร (Person ID)</th>
                 <th className="py-2.5 px-4">กลุ่ม BMI</th>
                 <th className="py-2.5 px-4 text-center">ค่าเริ่มต้น (Q1)</th>
-                <th className="py-2.5 px-4 text-center">ค่าล่าสุด (Q3)</th>
+                <th className="py-2.5 px-4 text-center">ค่าล่าสุด (Q4)</th>
                 <th className="py-2.5 px-4 text-right">
                   {activeTab === 'fat' && 'ผลต่าง % ไขมัน (และ % เปลี่ยนแปลง)'}
                   {activeTab === 'muscle' && 'ผลต่างมวลกล้ามเนื้อ (และ % เปลี่ยนแปลง)'}
@@ -111,7 +111,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ persons, onSelectPerso
                 (person, index) => {
                   const rank = index + 1;
                   const q1 = person.quarters.Q1 || person.quarters.Q2;
-                  const q3 = person.quarters.Q3;
+                  const qLatest = person.quarters.Q4 || person.quarters.Q3;
 
                   let initialVal = '-';
                   let latestVal = '-';
@@ -119,7 +119,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ persons, onSelectPerso
 
                   if (activeTab === 'fat') {
                     initialVal = q1?.body_fat_percentage ? `${q1.body_fat_percentage}%` : '#N/A';
-                    latestVal = q3?.body_fat_percentage ? `${q3.body_fat_percentage}%` : '#N/A';
+                    latestVal = qLatest?.body_fat_percentage ? `${qLatest.body_fat_percentage}%` : '#N/A';
                     const pctVal = person.fatPercentageChangePct ?? 0;
                     deltaNode = (
                       <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
@@ -129,7 +129,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ persons, onSelectPerso
                     );
                   } else if (activeTab === 'muscle') {
                     initialVal = q1?.muscle_mass ? `${q1.muscle_mass} kg` : '#N/A';
-                    latestVal = q3?.muscle_mass ? `${q3.muscle_mass} kg` : '#N/A';
+                    latestVal = qLatest?.muscle_mass ? `${qLatest.muscle_mass} kg` : '#N/A';
                     const pctVal = person.muscleMassChangePct ?? 0;
                     deltaNode = (
                       <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
@@ -139,7 +139,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ persons, onSelectPerso
                     );
                   } else {
                     initialVal = q1?.visceral_fat ? `${q1.visceral_fat} Lv` : '#N/A';
-                    latestVal = q3?.visceral_fat ? `${q3.visceral_fat} Lv` : '#N/A';
+                    latestVal = qLatest?.visceral_fat ? `${qLatest.visceral_fat} Lv` : '#N/A';
                     const pctVal = person.visceralFatChangePct ?? 0;
                     deltaNode = (
                       <span className="inline-flex items-center gap-1 font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">

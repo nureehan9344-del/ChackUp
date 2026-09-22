@@ -50,9 +50,24 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             </button>
           </div>
 
-          {/* Quarter Indicator */}
-          <div className="hidden sm:flex items-center text-[11px] font-semibold text-slate-500 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
-            ไตรมาสล่าสุด: <strong className="ml-1 text-slate-800">Q3 (มีนาคม)</strong>
+          {/* Quarter Presentation Selector (Q1, Q2, Q3, Q4) */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">ไตรมาส:</span>
+            <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200">
+              {(['Q1', 'Q2', 'Q3', 'Q4'] as Quarter[]).map((q) => (
+                <button
+                  key={q}
+                  onClick={() => onFilterChange({ selectedQuarter: q })}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                    filters.selectedQuarter === q
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {q === 'Q4' ? `${q} (ล่าสุด)` : q}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -135,7 +150,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               className="text-xs bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
             >
               <option value="all">ความครบถ้วนข้อมูล (ทั้งหมด)</option>
-              <option value="complete">ครบทั้ง 3 ไตรมาส</option>
+              <option value="complete">ครบทุกไตรมาส (Q1 - Q4)</option>
               <option value="partial">มีข้อมูลไม่ครบ (มี #N/A)</option>
             </select>
           </div>
@@ -172,7 +187,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           )}
           {filters.completenessFilter !== 'all' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200 text-[11px]">
-              สถานะข้อมูล: {filters.completenessFilter === 'complete' ? 'ครบ 3 ไตรมาส' : 'มี #N/A'}
+              สถานะข้อมูล: {filters.completenessFilter === 'complete' ? 'ครบทุกไตรมาส' : 'มี #N/A'}
               <button onClick={() => onFilterChange({ completenessFilter: 'all' })}>
                 <X className="h-3 w-3 text-indigo-500 hover:text-indigo-700" />
               </button>
